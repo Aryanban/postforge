@@ -1,4 +1,5 @@
 import { ProjectProfile } from '../../types';
+import { fetchLiveGitHubRepo } from './githubIngestor';
 
 /**
  * Intelligent project analyzer & crawler.
@@ -45,27 +46,7 @@ export async function ingestProjectUrl(inputUrl: string): Promise<ProjectProfile
   }
 
   if (isGithub) {
-    const repoParts = cleanUrl.split('github.com/')[1]?.split('/') || [];
-    const owner = repoParts[0] || 'developer';
-    const repo = repoParts[1] || 'project';
-
-    return {
-      id: `${owner}-${repo}`.toLowerCase(),
-      domain: `github.com/${owner}/${repo}`,
-      name: `${repo.replace(/[-_]/g, ' ').toUpperCase()}`,
-      tagline: `Open-source engineering repository by @${owner}.`,
-      description: `Production-ready codebase, algorithms, and architectural specifications hosted on GitHub.`,
-      techStack: ['TypeScript', 'Python', 'Docker', 'Next.js', 'PostgreSQL'],
-      targetPersona: 'Open Source Contributors, DevOps Engineers, and Software Architects',
-      valueProps: [
-        '100% open-source and self-hostable with clean documentation',
-        'Decoupled modular architecture built for developer extensibility',
-        'Zero vendor lock-in with native CLI and API support'
-      ],
-      simClusters: ['Open Source', 'DevOps & Cloud', 'Software Engineering', 'Building in Public'],
-      recommendedSubreddits: ['r/opensource', 'r/programming', 'r/github', 'r/SideProject'],
-      lastIngestedAt: new Date().toISOString()
-    };
+    return await fetchLiveGitHubRepo(cleanUrl);
   }
 
   // Generic Domain Synthesizer

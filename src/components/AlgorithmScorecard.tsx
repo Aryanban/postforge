@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { HeavyRankerMetrics } from '../types';
 import { 
   Zap, 
@@ -7,7 +7,11 @@ import {
   ShieldAlert, 
   TrendingUp, 
   CheckCircle2, 
-  AlertTriangle 
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp,
+  Cpu,
+  Calculator
 } from 'lucide-react';
 
 interface AlgorithmScorecardProps {
@@ -19,6 +23,8 @@ export const AlgorithmScorecard: React.FC<AlgorithmScorecardProps> = ({
   metrics,
   whyAlgorithmLikes,
 }) => {
+  const [showMathDetails, setShowMathDetails] = useState(false);
+
   const getScoreColor = (score: number) => {
     if (score >= 85) return 'text-brand-accent border-brand-accent/40 bg-brand-accent/10';
     if (score >= 65) return 'text-amber-400 border-amber-400/40 bg-amber-400/10';
@@ -112,6 +118,37 @@ export const AlgorithmScorecard: React.FC<AlgorithmScorecardProps> = ({
           </p>
         </div>
       )}
+
+      {/* Mathematical Breakdown Toggle */}
+      <div className="border-t border-white/5 pt-3">
+        <button
+          onClick={() => setShowMathDetails(!showMathDetails)}
+          className="text-xs font-mono text-zinc-400 hover:text-white flex items-center justify-between w-full cursor-pointer py-1"
+        >
+          <span className="flex items-center gap-2 text-brand-accent font-semibold">
+            <Calculator className="w-3.5 h-3.5" />
+            <span>Heavy Ranker Weight Formula</span>
+          </span>
+          {showMathDetails ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </button>
+
+        {showMathDetails && (
+          <div className="mt-3 p-4 rounded-xl border border-brand-border bg-brand-bg font-mono text-xs text-zinc-400 space-y-2.5">
+            <div className="text-zinc-300 font-bold border-b border-white/5 pb-1">
+              Exact Neural Scoring Equation:
+            </div>
+            <code className="text-brand-accent text-[11px] block bg-black/40 p-2.5 rounded-lg border border-white/5">
+              Score = (P_reply &times; 13.5) + (P_author_reply &times; 75.0) + (P_dwell &times; 11.0) + (P_rt &times; 1.0) - Link_Penalty (28)
+            </code>
+            <ul className="text-[11px] space-y-1 pl-4 list-disc text-zinc-400 pt-1">
+              <li><strong className="text-white">Author replies to comments:</strong> 75.0 weight (150x more potent than simple likes).</li>
+              <li><strong className="text-white">Inbound user replies:</strong> 13.5 weight (27x multiplier).</li>
+              <li><strong className="text-white">Root post outbound URL:</strong> -28 to -45 penalty score suppression in the For You candidate pool.</li>
+              <li><strong className="text-white">Dwell time (&gt;15s):</strong> Triggers candidate pool expansion to 2nd-degree follower graphs.</li>
+            </ul>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

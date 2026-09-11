@@ -1,68 +1,110 @@
 # PostForge • Algorithm-Native Social & Anti-Shadowban Engine
 
-> **The first open-source, algorithm-aware social management engine.**  
-> Built by reverse-engineering `twitter/the-algorithm` and `xai-org/x-algorithm`, combining multi-platform scheduling inspired by `gitroomhq/postiz-app`, and zero-touch project ingestion inspired by `unclecode/crawl4ai`.
+<p align="center">
+  <img src="https://img.shields.io/badge/License-MIT-lime.svg?style=for-the-badge" alt="License MIT" />
+  <img src="https://img.shields.io/badge/Algorithm-X%20Heavy%20Ranker-black?style=for-the-badge&logo=x" alt="X Algorithm" />
+  <img src="https://img.shields.io/badge/Stack-React%2019%20%7C%20TypeScript-indigo?style=for-the-badge" alt="React 19" />
+  <img src="https://img.shields.io/badge/PRs-Welcome-brightgreen.svg?style=for-the-badge" alt="PRs Welcome" />
+</p>
+
+> **The first open-source, algorithm-aware growth engine for X and Reddit.**  
+> Built by reverse-engineering `twitter/the-algorithm` and `xai-org/x-algorithm`, combining multi-network scheduling inspired by `gitroomhq/postiz-app`, and zero-touch project ingestion inspired by `unclecode/crawl4ai`.
 
 ---
 
-## ⚡ What We Improved Upon Existing Open-Source Repositories
+## ⚡ Why PostForge Outperforms Traditional Tools
 
-| Upstream Project | What It Did | What PostForge Improves & Adds |
-| :--- | :--- | :--- |
-| **`twitter/the-algorithm`** | The raw Scala/Rust recommendation model that scores tweets inside X's data centers. | **We inverted it into a Creator-Side Pre-Flight Linter.** Instead of wondering why a post flopped, PostForge scores your draft in real-time (0–100) using the Heavy Ranker formulas before you publish. |
-| **`gitroomhq/postiz-app`** (30k+ ⭐) | A scheduling dashboard for 30+ networks, but operates like a dumb queue (it schedules whatever you write). | **We added the missing "Algorithmic Brain"**: automated domain/repo ingestion, 2-step link quarantine (hook in tweet, URL in 1st reply), and humanized jitter scheduling ($\pm 4\text{ to }18\text{ mins}$) to bypass bot detection. |
-| **`unclecode/crawl4ai`** | Extracts raw markdown from web pages. | **We pipe scraped project data into a Viral Positioning Synthesizer**: automatically generates Contrarian Engineering Hooks, 5-Tweet Architecture Breakdowns, and Reddit 9:1 compliant stories. |
+Existing tools (TweetHunter, Typefully, Buffer, Postiz) are **"dumb queues"** — they schedule whatever you write without understanding how modern recommendation neural networks score and throttle posts.
 
----
+PostForge acts as a **Creator-Side Pre-Flight Linter** that evaluates your drafts against the mathematical parameters of the open-sourced Twitter Heavy Ranker **before you publish**:
 
-## 🔬 The Core Algorithmic Mathematics (X Heavy Ranker)
-
-PostForge evaluates draft posts against the actual parameters found in X's recommendation engine:
-
-* **Author-to-Reply Interaction (150× multiplier)**: When the author replies to a commenter in their thread, it generates the highest session retention score. PostForge automatically structures posts with binary dilemma questions to trigger active debates.
-* **The Root Link Distribution Penalty (-50% to -70%)**: X's algorithm heavily de-ranks posts containing external links in the root tweet to prevent users from leaving the platform.
-  * **PostForge Solution**: **2-Step Link Quarantine**. PostForge extracts your URL and queues it as an automated 1st reply 15 minutes after the tweet launches.
-* **Hashtag De-Ranking**: Using 2 or more hashtags triggers modern spam classifier de-ranking. PostForge caps hashtags at 0–1.
-* **Dwell Time Index (>10s–15s)**: Linebreaks, bullet points, and code snippet formatting naturally double the visual dwell time on mobile screens.
-
----
-
-## 🛡️ The 7-Point Anti-Shadowban Guardrail
-
-Every post passes through an automated pre-flight security scan:
-1. **Root Link Quarantine**: Detects external URLs and offers 1-click detachment to the 1st reply.
-2. **Hashtag Quarantine**: Eliminates hashtag spam traps.
-3. **Wall-of-Text Detector**: Formats dense paragraphs into high dwell-time bullet hierarchies.
-4. **Anti-Bot Interval Jitter**: Injects pseudo-random offsets ($\pm 4\text{ to }18\text{ mins}$) so posting timestamps never match robotic intervals.
-5. **Commercial Keyword Filter**: Flags over-aggressive marketing triggers ("DM me", "Check bio", "Limited spots").
-6. **SimCluster Semantic Alignment**: Ensures terminology matches developer, AI, and systems engineering clusters.
-7. **Reddit 9:1 Self-Promotion Ratio**: Guarantees Reddit posts are 90% engineering lesson and only 10% link drop to comply with community AutoMod rules.
-
----
-
-## 🚀 Two Operating Modes
-
-1. **Zero-Cost 1-Click Native Intent Launcher (100% Free)**:
-   * X API Basic costs $100/month. PostForge offers a native 1-click launcher (`twitter.com/intent/tweet?text=...`) that automatically opens pre-formatted, algorithm-cleansed posts directly in X without needing any paid developer account!
-2. **Automated API Dispatch Mode**:
-   * Connect your X API v2 keys and Reddit PRAW credentials in the client-side encrypted Local Vault for hands-off automated publishing.
+```
+[ User Inputs Domain or GitHub URL ]
+                 │
+                 ▼
+     [ Live Project Ingestion ] (Crawl4AI & GitHub REST API)
+   • Pulls stars, README, tech stack, and value propositions
+   • Maps project into semantic SimCluster profiles
+                 │
+                 ▼
+     [ Algorithmic Content Synthesizer ]
+   ┌─────────────┴─────────────┐
+   ▼                           ▼
+[ Morning Velocity Post ]   [ Evening Discussion Post ]
+• Hook-first breakdown       • 150x Author-Reply catalyst
+• Dwell-time formatting      • Binary debate dilemma
+   └─────────────┬─────────────┘
+                 │
+                 ▼
+[ 7-Point Anti-Shadowban Linter ]
+  ✓ Root Link Quarantine (Extracts URL -> Delayed 1st Reply)
+  ✓ Hashtag Quarantine (Caps at 0–1 to prevent spam de-ranking)
+  ✓ Wall-of-Text Detector (Optimizes visual reading pause)
+  ✓ Anti-Bot Interval Jitter (±4 to 18 min randomized offsets)
+  ✓ Reddit 9:1 Self-Promotion Compliance Check
+                 │
+                 ▼
+[ Multi-Mode Dispatch & Scheduler ]
+  ├── Mode A: 1-Click Native Intent Launcher (100% Free / Zero API cost)
+  └── Mode B: Direct X API v2 & Reddit PRAW (Automated)
+```
 
 ---
 
-## 🛠️ Quickstart & Local Setup
+## 📊 Feature Comparison: PostForge vs Competitors
+
+| Feature | PostForge (Open Source) | TweetHunter ($99/mo) | Typefully ($29/mo) | Postiz (Open Source) |
+| :--- | :---: | :---: | :---: | :---: |
+| **Heavy Ranker Algorithm Scoring** | ✅ **Native** | ❌ No | ❌ No | ❌ No |
+| **7-Point Anti-Shadowban Linter** | ✅ **Built-in** | ❌ No | ❌ No | ❌ No |
+| **2-Step Link Quarantine (URL in reply)** | ✅ **Automated** | ⚠️ Manual | ⚠️ Manual | ❌ No |
+| **Live GitHub Repo Auto-Ingestion** | ✅ **Direct API** | ❌ No | ❌ No | ❌ No |
+| **Zero-Cost Mode (No $100/mo X API needed)** | ✅ **1-Click Intent** | ❌ Requires sub | ❌ Requires sub | ⚠️ Complex setup |
+| **Reddit 9:1 Self-Promo Guardrail** | ✅ **Included** | ❌ No | ❌ No | ❌ No |
+| **Humanized Anti-Bot Jitter** | ✅ **Randomized** | ❌ Exact times | ❌ Exact times | ❌ Exact times |
+| **100% Free & Self-Hostable** | ✅ **MIT License** | ❌ Closed Source | ❌ Closed Source | ⚠️ AGPL-3.0 |
+
+---
+
+## 🔬 The Heavy Ranker Mathematics
+
+PostForge evaluates posts using the real ranking multipliers from `twitter/the-algorithm`:
+
+$$\text{Score} = 13.5 \times P(\text{Reply}) + 75.0 \times P(\text{Author Reply}) + 11.0 \times P(\text{Dwell} > 15s) + 1.0 \times P(\text{Retweet}) + 0.5 \times P(\text{Like}) - \text{Penalties}$$
+
+* **The 150× Author-Reply Boost**: Author responses to comments carry 150× the weight of a passive like. PostForge automatically frames posts with open-loop questions to stimulate conversation.
+* **The Root Link Distribution Penalty (-50% to -70%)**: Outbound URLs in the main tweet trigger platform retention penalties. PostForge automatically decouples external links into a **delayed 1st reply**.
+* **Dwell Time Optimization**: Bullet points, code snippets, and short lines double screen pause time, signaling high intent to the neural ranker.
+
+---
+
+## 🛡️ The 7-Point Anti-Shadowban Shield
+
+Every draft is evaluated before dispatch:
+1. **Link Quarantine**: Prevents external URLs in root posts from throttling distribution.
+2. **Hashtag Quarantine**: Limits hashtags to 0–1 (2+ hashtags actively trigger spam de-ranking).
+3. **Wall-of-Text Detector**: Ensures readability on mobile viewports.
+4. **Anti-Bot Interval Jitter**: Adds randomized minute offsets to prevent robotic timing signatures.
+5. **Spam Word Filter**: Flags high-risk marketing phrases ("DM me", "Check bio").
+6. **SimCluster Consistency**: Aligns post vocabulary with your target developer/tech community graph.
+7. **Reddit 9:1 Rule**: Ensures Reddit submissions are 90% engineering lesson and only 10% link drop.
+
+---
+
+## 🚀 Quickstart & Local Setup
 
 ```bash
-# Clone the repository
+# 1. Clone the repository
 git clone https://github.com/Aryanban/postforge.git
 cd postforge
 
-# Install dependencies
+# 2. Install dependencies
 npm install
 
-# Start the local development server
+# 3. Start local development server
 npm run dev
 
-# Build production bundle
+# 4. Build production bundle
 npm run build
 ```
 
@@ -70,10 +112,19 @@ Open `http://localhost:5173` to launch the PostForge Dashboard.
 
 ---
 
-## 📦 Tech Stack
+## 🤝 Contributing & Community
 
-* **Framework**: React 19 + TypeScript + Vite
-* **Styling**: Tailwind CSS v4 + Dark Brutalist Theme
-* **Icons**: Lucide React
-* **Storage**: Client-Side Encrypted Local Vault (Zero third-party data tracking)
-* **License**: MIT (Open Source)
+Contributions are welcome! If you want to add new platform adapters, improve scoring formulas, or add hook frameworks:
+1. Fork the repo (`https://github.com/Aryanban/postforge`).
+2. Create your feature branch (`git checkout -b feature/cool-algorithm-rule`).
+3. Commit your changes (`git commit -m 'feat: add Bluesky algorithm adapter'`).
+4. Push to the branch (`git push origin feature/cool-algorithm-rule`).
+5. Open a Pull Request.
+
+If PostForge helped your project get traction, please **give the repo a star ⭐ on GitHub**!
+
+---
+
+## 📄 License
+
+PostForge is open source under the **MIT License**. Created by [Aryan Bansal](https://github.com/Aryanban).
