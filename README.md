@@ -53,8 +53,8 @@ Every post passes through an automated pre-flight security scan:
 
 ```bash
 # Clone the repository
-git clone https://github.com/Aryanban/busy-heisenberg.git
-cd busy-heisenberg
+git clone https://github.com/Aryanban/postforge.git
+cd postforge
 
 # Install dependencies
 npm install
