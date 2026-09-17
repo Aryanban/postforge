@@ -1,4 +1,9 @@
-import { ShadowbanCheck } from '../../types';
+import { ShadowbanCheck } from '../types';
+import { calculateSimClusterAlignment } from './simClusterAligner';
+
+export interface LinterContext {
+  keywords?: string[];
+}
 
 export interface LinterResult {
   checks: ShadowbanCheck[];
@@ -8,7 +13,11 @@ export interface LinterResult {
   extractedReplyLink?: string;
 }
 
-export function lintPostContent(content: string, replyContent?: string): LinterResult {
+export function lintPostContent(
+  content: string,
+  replyContent?: string,
+  context?: LinterContext
+): LinterResult {
   const text = content.trim();
   const checks: ShadowbanCheck[] = [];
 
@@ -128,6 +137,27 @@ export function lintPostContent(content: string, replyContent?: string): LinterR
       title: '2-Step Link Strategy Active',
       severity: 'pass',
       details: 'External link is quarantined in 1st reply. Hook reaches maximum algorithmic audience before link is revealed.',
+      fixable: false,
+    });
+  }
+
+  // Check 7: SimCluster Consistency — does the copy speak the project's language?
+  const alignment = calculateSimClusterAlignment(text, context?.keywords);
+  if (alignment < 55) {
+    checks.push({
+      id: 'simcluster-alignment',
+      title: `SimCluster Drift (${alignment}% vocabulary alignment)`,
+      severity: 'warning',
+      details: 'The copy barely overlaps your project’s target community vocabulary, weakening semantic clustering and topic-graph signals.',
+      fixDescription: 'Weave in 2–3 terms from the project’s tech stack or community clusters.',
+      fixable: false,
+    });
+  } else {
+    checks.push({
+      id: 'simcluster-alignment',
+      title: `SimCluster Consistency (${alignment}% aligned)`,
+      severity: 'pass',
+      details: 'Vocabulary aligns with the target community graph.',
       fixable: false,
     });
   }

@@ -1,7 +1,12 @@
-import { ProjectProfile, PostItem } from '../../types';
-import { calculateHeavyRankerScore } from '../algorithm/heavyRanker';
-import { lintPostContent } from '../algorithm/shadowbanLinter';
+import { ProjectProfile, PostItem, PlatformType } from '../types';
+import { calculateHeavyRankerScore, type ScoreContext } from '../algorithm/heavyRanker';
+import { lintPostContent, type LinterContext } from '../algorithm/shadowbanLinter';
 import { calculateJitteredSchedule } from '../algorithm/optimalTimes';
+import { extractProjectKeywords } from '../algorithm/simClusterAligner';
+
+function scoreContext(project: ProjectProfile, platform: PlatformType): ScoreContext & LinterContext {
+  return { keywords: extractProjectKeywords(project), platform };
+}
 
 export function generateDailyPostBatch(project: ProjectProfile): PostItem[] {
   const primaryTech = project.techStack.slice(0, 3).join(', ');
@@ -26,8 +31,8 @@ What is your #1 rule when structuring clean systems?`;
 
   const morningReply = `Inspect the live platform & system documentation here:\n${projectDomain}\n\nBookmark this thread if you're building with ${project.techStack[0] || 'TypeScript'}! 🔖`;
 
-  const morningScore = calculateHeavyRankerScore(morningContent, morningReply);
-  const morningLints = lintPostContent(morningContent, morningReply);
+  const morningScore = calculateHeavyRankerScore(morningContent, morningReply, scoreContext(project, 'x'));
+  const morningLints = lintPostContent(morningContent, morningReply, scoreContext(project, 'x'));
 
   const morningPost: PostItem = {
     id: `post-${Date.now()}-morning`,
@@ -63,8 +68,8 @@ Would you rather ship faster with technical debt, or take 2x longer to get the a
 
   const eveningReply = `Explore the live build and system specs at:\n${projectDomain}\n\nDrop your perspective below — replying to every comment! 👇`;
 
-  const eveningScore = calculateHeavyRankerScore(eveningContent, eveningReply);
-  const eveningLints = lintPostContent(eveningContent, eveningReply);
+  const eveningScore = calculateHeavyRankerScore(eveningContent, eveningReply, scoreContext(project, 'x'));
+  const eveningLints = lintPostContent(eveningContent, eveningReply, scoreContext(project, 'x'));
 
   const eveningPost: PostItem = {
     id: `post-${Date.now()}-evening`,
@@ -97,6 +102,7 @@ export function generateCustomAngle(project: ProjectProfile, framework: string):
   let reply = `Source code and project details:\n${projectDomain}\n\nBookmark for your next build! 🔖`;
   let frameworkName = 'Custom Growth Angle';
   let why = 'Structured for high dwell-time and organic conversational velocity.';
+  let threadParts: string[] | undefined;
 
   if (framework === 'post-mortem') {
     frameworkName = 'Engineering Post-Mortem';
@@ -114,17 +120,17 @@ What was your most painful refactor this year?`;
     why = 'Vulnerability and engineering failures trigger 3x higher comment rates than self-congratulatory launch posts.';
   } else if (framework === 'thread-hook') {
     frameworkName = '5-Part Architecture Thread';
-    content = `How to engineer a modern, zero-latency digital platform in 2026.
-
-A breakdown of the architecture powering ${project.name}:
-
-1/ Datapath & State Flow
-2/ Layout Ergonomics & Glassmorphism
-3/ Anti-Shadowban Algorithm Compliance
-4/ Production Deployment on the Edge
-
-🧵 Mini-thread below:`;
-    reply = `Live implementation: ${projectDomain}\n\n1/ Datapath: Using ${primaryTech} to ensure zero runtime overhead and immediate DOM reconciliation.`;
+    // A real, dispatchable thread: each part is a standalone <=280 char tweet
+    // that the backend posts as a reply chain.
+    threadParts = [
+      `How to engineer a modern, zero-latency platform in 2026.\n\nThe architecture powering ${project.name}, in 5 parts 🧵`,
+      `1/ Datapath & State Flow\n\n${primaryTech} with zero runtime overhead and immediate reconciliation.`,
+      `2/ Layout Ergonomics\n\nBrutalist dark UI with sub-50ms interaction latency across the whole tree.`,
+      `3/ Anti-Shadowban Compliance\n\nLinks quarantined to the first reply — never in the root post.`,
+      `4/ Edge Deployment\n\nImmutable builds, atomic deploys, zero-config cache invalidation.`,
+    ];
+    content = threadParts[0];
+    reply = `Live implementation: ${projectDomain}\n\n1/ Datapath: using ${primaryTech} for zero runtime overhead.`;
     why = 'Threads trigger multi-click dwell metrics. Users expanding the thread signal strong intent to the recommendation neural network.';
   } else if (framework === 'reddit-story') {
     frameworkName = 'Reddit 9:1 Value Showcase';
@@ -155,13 +161,15 @@ Stack:
 The complete setup is running live. What stack are you betting on right now?`;
   }
 
-  const score = calculateHeavyRankerScore(content, reply);
-  const lints = lintPostContent(content, reply);
+  const platform: PlatformType = framework === 'reddit-story' ? 'reddit' : 'x';
+  const ctx = scoreContext(project, platform);
+  const score = calculateHeavyRankerScore(content, reply, ctx);
+  const lints = lintPostContent(content, reply, ctx);
 
   return {
     id: `custom-${Date.now()}`,
     projectId: project.id,
-    platform: framework === 'reddit-story' ? 'reddit' : 'x',
+    platform,
     slot: 'custom',
     framework,
     frameworkName,
@@ -170,6 +178,7 @@ The complete setup is running live. What stack are you betting on right now?`;
     hasRootLink: false,
     replyContent: reply,
     subreddit: framework === 'reddit-story' ? project.recommendedSubreddits[0] : undefined,
+    threadParts,
     scheduledDate: timing.scheduledDate.toISOString(),
     jitterMinutes: timing.jitterMinutes,
     status: 'draft',

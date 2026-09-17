@@ -1,4 +1,12 @@
-import { HeavyRankerMetrics } from '../../types';
+import type { HeavyRankerMetrics, PlatformType } from '../types';
+import { calculateSimClusterAlignment } from './simClusterAligner';
+
+export interface ScoreContext {
+  /** Target vocabulary from the ingested project, for SimCluster alignment. */
+  keywords?: string[];
+  /** Platform the post targets — link penalties differ per network. */
+  platform?: PlatformType;
+}
 
 /**
  * Evaluates a draft tweet using the mathematical parameters of the open-sourced
@@ -14,7 +22,12 @@ import { HeavyRankerMetrics } from '../../types';
  * - Multiple hashtags: penalty factor
  * - Dwell time (>10s): +35% distribution multiplier
  */
-export function calculateHeavyRankerScore(content: string, replyContent?: string): HeavyRankerMetrics {
+export function calculateHeavyRankerScore(
+  content: string,
+  replyContent?: string,
+  context?: ScoreContext
+): HeavyRankerMetrics {
+  const platform: PlatformType = context?.platform ?? 'x';
   const text = content.trim();
   const urlRegex = /(https?:\/\/[^\s]+)/gi;
   const hashtagRegex = /#[a-z0-9_]+/gi;
@@ -47,9 +60,10 @@ export function calculateHeavyRankerScore(content: string, replyContent?: string
   // 2. Formatting / readability boost
   if (hasFormatting) score += 12;
 
-  // 3. Root link penalty: X penalizes posts driving users off-platform
+  // 3. Root link penalty: X throttles off-platform traffic heavily (-28);
+  //    Reddit self-posts and LinkedIn tolerate in-body links far more.
   if (hasRootLink) {
-    score -= 28; // Major penalty
+    score -= platform === 'x' ? 28 : 8;
   } else if (replyContent && replyContent.match(urlRegex)) {
     // 2-step link quarantine strategy rewarded
     score += 15;
@@ -81,7 +95,7 @@ export function calculateHeavyRankerScore(content: string, replyContent?: string
     dwellTimeSeconds,
     rootLinkPenalty: hasRootLink,
     hashtagCount,
-    simClusterAlignment: 92, // High keyword relevance to dev/tech cluster
+    simClusterAlignment: calculateSimClusterAlignment(text, context?.keywords),
     impressionMultiplierEst,
   };
 }

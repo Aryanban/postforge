@@ -12,9 +12,16 @@ export interface ProjectProfile {
   lastIngestedAt: string;
 }
 
-export type PlatformType = 'x' | 'reddit';
+export type PlatformType = 'x' | 'reddit' | 'linkedin';
 export type SlotType = 'morning' | 'evening' | 'custom';
-export type PostStatus = 'draft' | 'approved' | 'scheduled' | 'published';
+export type PostStatus = 'draft' | 'approved' | 'scheduled' | 'published' | 'failed';
+
+/**
+ * Structural role a row plays in the dispatch pipeline.
+ * - root:  a standalone top-level post
+ * - reply: a delayed follow-up (e.g. the quarantined link) chained to a parent
+ */
+export type PostKind = 'root' | 'reply';
 
 export interface PostItem {
   id: string;
@@ -34,6 +41,16 @@ export interface PostItem {
   whyAlgorithmLikes: string;
   algorithmScore: HeavyRankerMetrics;
   linterChecks: ShadowbanCheck[];
+
+  // --- Dispatch pipeline (server-managed) ---
+  postKind?: PostKind;
+  threadParts?: string[];        // Real multi-part thread bodies (X), each <= 280 chars
+  parentRemoteId?: string;       // For replies: the platform id of the parent post
+  remoteId?: string;             // Platform post id once dispatched
+  dispatchedAt?: string;         // ISO timestamp of successful dispatch
+  simulated?: boolean;           // true when produced by dry-run (no live API keys)
+  error?: string;                // Last dispatch failure message
+  attemptCount?: number;         // Dispatch attempts (retry with backoff)
 }
 
 export interface HeavyRankerMetrics {

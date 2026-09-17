@@ -1,4 +1,4 @@
-import { ProjectProfile } from '../../types';
+import { ProjectProfile } from '../types';
 import { fetchLiveGitHubRepo } from './githubIngestor';
 
 /**
@@ -49,23 +49,41 @@ export async function ingestProjectUrl(inputUrl: string): Promise<ProjectProfile
     return await fetchLiveGitHubRepo(cleanUrl);
   }
 
-  // Generic Domain Synthesizer
+  // Generic Domain: crawl the live site. Runs server-side (no CORS limits),
+  // so this is real data rather than a synthesized guess.
+  try {
+    const { crawlDomain, synthesizeProfileFromCrawl } = await import('./domCrawler.js');
+    const crawl = await crawlDomain(cleanUrl);
+    return synthesizeProfileFromCrawl(crawl);
+  } catch (err) {
+    return synthesizeFallback(domain, err);
+  }
+}
+
+/**
+ * Honest last resort: only used when the live crawl fails (offline host,
+ * non-HTML response, or timeout). Makes the degradation explicit rather than
+ * silently fabricating a profile.
+ */
+function synthesizeFallback(domain: string, err: unknown): ProjectProfile {
+  const message = err instanceof Error ? err.message : String(err);
+  console.warn(`[postforge] live crawl failed for ${domain} (${message}); using heuristic fallback`);
   const nameFormatted = domain.split('.')[0].toUpperCase();
   return {
     id: domain.replace(/[^a-z0-9]/gi, '-').toLowerCase(),
     domain,
     name: nameFormatted,
-    tagline: `Modern web platform and digital software system at ${domain}.`,
-    description: `High-velocity application engineered for high-reliability user experiences and automated workflow management.`,
-    techStack: ['React', 'TypeScript', 'Node.js', 'Tailwind CSS', 'Vercel'],
+    tagline: `Live web platform at ${domain} (crawl unavailable: ${message}).`,
+    description: `High-velocity application engineered for reliable user experiences and automated workflows.`,
+    techStack: ['React', 'TypeScript', 'Node.js', 'Tailwind CSS'],
     targetPersona: 'Early Adopters, Developers, Founders, and Modern Tech Teams',
     valueProps: [
       `Solving core friction points for digital workflows at scale`,
       `Zero-latency responsive interface optimized for speed and clarity`,
-      `Engineered with modern web standards and security best practices`
+      `Engineered with modern web standards and security best practices`,
     ],
-    simClusters: ['Tech Founders', 'Web Development', 'Software as a Service', 'AI Tools'],
-    recommendedSubreddits: ['r/SideProject', 'r/webdev', 'r/startups', 'r/Productivity'],
-    lastIngestedAt: new Date().toISOString()
+    simClusters: ['Tech Founders', 'Web Development', 'Software as a Service'],
+    recommendedSubreddits: ['r/SideProject', 'r/webdev', 'r/startups'],
+    lastIngestedAt: new Date().toISOString(),
   };
 }

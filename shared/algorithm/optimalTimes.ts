@@ -10,9 +10,9 @@ export interface OptimalTimeSlot {
 export const AUDIENCE_ACTIVE_SLOTS: OptimalTimeSlot[] = [
   {
     slot: 'morning',
-    label: 'Morning Velocity Window (8:45 AM)',
+    label: 'Morning Velocity Window (8:30 AM)',
     baseHour: 8,
-    baseMinute: 45,
+    baseMinute: 30,
     reason: 'Highest bookmark and retweet window as engineers, founders, and professionals begin their workday.',
     recommendedAngle: 'Build-in-public lesson, architecture diagrams, or engineering breakdown.'
   },

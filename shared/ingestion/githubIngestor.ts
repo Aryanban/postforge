@@ -1,4 +1,4 @@
-import { ProjectProfile } from '../../types';
+import { ProjectProfile } from '../types';
 
 export interface GitHubRepoDetails {
   owner: string;
@@ -13,6 +13,21 @@ export interface GitHubRepoDetails {
   homepage?: string;
   license?: string;
   readmeExcerpt?: string;
+}
+
+/** Subset of the GitHub REST /repos/:owner/:repo response that we consume. */
+interface GitHubRepoApiResponse {
+  name?: string;
+  full_name?: string;
+  description?: string;
+  stargazers_count?: number;
+  forks_count?: number;
+  open_issues_count?: number;
+  language?: string;
+  topics?: string[];
+  homepage?: string;
+  license?: { spdx_id?: string };
+  owner?: { login?: string };
 }
 
 /**
@@ -40,7 +55,7 @@ export async function fetchLiveGitHubRepo(repoUrl: string): Promise<ProjectProfi
   try {
     const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`);
     if (res.ok) {
-      const data = await res.json();
+      const data = (await res.json()) as GitHubRepoApiResponse;
       details = {
         owner: data.owner?.login || owner,
         repo: data.name || repo,

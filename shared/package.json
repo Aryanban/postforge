@@ -1,0 +1,14 @@
+{
+  "name": "@postforge/core",
+  "version": "1.0.0",
+  "description": "Framework-agnostic PostForge core: Heavy Ranker scoring, anti-shadowban linter, project ingestion, and content generators.",
+  "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0"
+  },
+  "license": "MIT"
+}
