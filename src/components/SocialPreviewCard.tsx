@@ -1,5 +1,5 @@
 import React from 'react';
-import { PostItem } from '../types';
+import { PostItem } from '@postforge/core';
 import { 
   Heart, 
   Repeat2, 

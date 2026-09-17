@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ApiVaultConfig } from '../types';
+import { ApiVaultConfig } from '@postforge/core';
+import { api, LINKEDIN_CONNECT_URL, type BackendStatus } from '../lib/api/client';
 import { 
   Key, 
   X, 
@@ -8,27 +9,50 @@ import {
   Info, 
   CheckCircle2, 
   Sparkles,
-  Lock
+  Lock,
+  Linkedin
 } from 'lucide-react';
 
 interface ApiKeysModalProps {
   config: ApiVaultConfig;
   onSave: (config: ApiVaultConfig) => void;
   onClose: () => void;
+  backend: BackendStatus;
 }
 
 export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
   config,
   onSave,
   onClose,
+  backend,
 }) => {
   const [formData, setFormData] = useState<ApiVaultConfig>({ ...config });
-  const [activeTab, setActiveTab] = useState<'x' | 'reddit' | 'ai'>('x');
+  const [activeTab, setActiveTab] = useState<'x' | 'reddit' | 'linkedin' | 'ai'>('x');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave(formData);
+    // Mirror provider keys into the encrypted backend vault when available,
+    // so the scheduler can dispatch on your behalf.
+    if (backend.available) {
+      if (formData.xApiKey) {
+        void api.putCredentials('x', {
+          appKey: formData.xApiKey,
+          appSecret: formData.xApiSecret,
+          accessToken: formData.xAccessToken,
+          accessSecret: formData.xAccessSecret,
+        });
+      }
+      if (formData.redditClientId) {
+        void api.putCredentials('reddit', {
+          clientId: formData.redditClientId,
+          clientSecret: formData.redditClientSecret,
+          username: formData.redditUsername,
+          password: formData.redditPassword,
+        });
+      }
+    }
     setSavedSuccess(true);
     setTimeout(() => {
       setSavedSuccess(false);
@@ -61,7 +85,8 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
             API Credentials &amp; Dispatch Modes
           </h3>
           <p className="text-xs text-zinc-400">
-            All API tokens are stored strictly in your browser's encrypted local storage. Never proxied or sent to third-party databases.
+            Keys are saved to this browser's local vault and, when the backend is running, mirrored
+            into its encrypted server-side vault so the scheduler can dispatch on your behalf.
           </p>
         </div>
 
@@ -118,6 +143,15 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
             }`}
           >
             Reddit PRAW API
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('linkedin')}
+            className={`pb-2 transition-colors cursor-pointer ${
+              activeTab === 'linkedin' ? 'text-sky-400 border-b-2 border-sky-400 font-bold' : 'text-zinc-500 hover:text-white'
+            }`}
+          >
+            LinkedIn
           </button>
           <button
             type="button"
@@ -213,6 +247,34 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
                   className="w-full bg-brand-bg border border-brand-border rounded-xl p-2.5 text-zinc-200 placeholder:text-zinc-700 focus:outline-none focus:border-brand-indigo"
                 />
               </div>
+            </div>
+          )}
+
+          {activeTab === 'linkedin' && (
+            <div className="space-y-3">
+              {!backend.available ? (
+                <p className="text-[11px] text-zinc-500">
+                  Start the backend (<span className="text-zinc-300">npm -w @postforge/api run dev</span>) to connect LinkedIn via OAuth.
+                </p>
+              ) : backend.providers.linkedin ? (
+                <div className="p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-[11px] flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" /> LinkedIn account connected to the vault.
+                </div>
+              ) : (
+                <>
+                  <p className="text-[11px] text-zinc-500">
+                    LinkedIn uses OAuth 2.0 and is linked securely server-side. Requires
+                    LINKEDIN_CLIENT_ID / LINKEDIN_CLIENT_SECRET in <span className="text-zinc-300">server/.env</span>.
+                  </p>
+                  <a
+                    href={LINKEDIN_CONNECT_URL}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-sky-500 text-white font-bold uppercase tracking-wider cursor-pointer hover:bg-sky-400 transition-colors"
+                  >
+                    <Linkedin className="w-4 h-4" />
+                    <span>Connect LinkedIn Account</span>
+                  </a>
+                </>
+              )}
             </div>
           )}
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ProjectProfile } from '../types';
+import { ProjectProfile } from '@postforge/core';
 import { 
   Cpu, 
   Key, 

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { ProjectProfile, PostItem } from '../types';
-import { calculateHeavyRankerScore } from '../lib/algorithm/heavyRanker';
-import { lintPostContent, autoFixForAlgorithm } from '../lib/algorithm/shadowbanLinter';
-import { generateDailyPostBatch, generateCustomAngle } from '../lib/generators/promptTemplates';
+import { ProjectProfile, PostItem } from '@postforge/core';
+import { calculateHeavyRankerScore } from '@postforge/core';
+import { lintPostContent, autoFixForAlgorithm } from '@postforge/core';
+import { generateDailyPostBatch, generateCustomAngle, AI_FRAMEWORKS, extractProjectKeywords } from '@postforge/core';
+import { api, type BackendStatus } from '../lib/api/client';
 import { AlgorithmScorecard } from './AlgorithmScorecard';
 import { ShadowbanInspector } from './ShadowbanInspector';
 import { SocialPreviewCard } from './SocialPreviewCard';
@@ -24,23 +25,35 @@ import {
 interface PostStudioProps {
   project: ProjectProfile;
   onSchedulePost: (post: PostItem) => void;
+  backend: BackendStatus;
 }
 
 export const PostStudio: React.FC<PostStudioProps> = ({
   project,
   onSchedulePost,
+  backend,
 }) => {
   const [posts, setPosts] = useState<PostItem[]>(() => generateDailyPostBatch(project));
   const [activePostIndex, setActivePostIndex] = useState(0);
   const [viewMode, setViewMode] = useState<'editor' | 'preview'>('editor');
   const [scheduledSuccessId, setScheduledSuccessId] = useState<string | null>(null);
+  const [aiFramework, setAiFramework] = useState(AI_FRAMEWORKS[0].id);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiNote, setAiNote] = useState<string | null>(null);
 
   const currentPost = posts[activePostIndex] || posts[0];
 
+  // Live scoring uses the project's real vocabulary for SimCluster alignment.
+  const scoreContext = () => ({
+    keywords: extractProjectKeywords(project),
+    platform: currentPost.platform,
+  });
+
   // Recalculate on manual edit
   const handleContentChange = (newContent: string) => {
-    const updatedScore = calculateHeavyRankerScore(newContent, currentPost.replyContent);
-    const updatedLints = lintPostContent(newContent, currentPost.replyContent);
+    const ctx = scoreContext();
+    const updatedScore = calculateHeavyRankerScore(newContent, currentPost.replyContent, ctx);
+    const updatedLints = lintPostContent(newContent, currentPost.replyContent, ctx);
 
     const updatedPosts = [...posts];
     updatedPosts[activePostIndex] = {
@@ -53,8 +66,9 @@ export const PostStudio: React.FC<PostStudioProps> = ({
   };
 
   const handleReplyChange = (newReply: string) => {
-    const updatedScore = calculateHeavyRankerScore(currentPost.mainContent, newReply);
-    const updatedLints = lintPostContent(currentPost.mainContent, newReply);
+    const ctx = scoreContext();
+    const updatedScore = calculateHeavyRankerScore(currentPost.mainContent, newReply, ctx);
+    const updatedLints = lintPostContent(currentPost.mainContent, newReply, ctx);
 
     const updatedPosts = [...posts];
     updatedPosts[activePostIndex] = {
@@ -70,8 +84,9 @@ export const PostStudio: React.FC<PostStudioProps> = ({
     const { fixedContent, replyContent } = autoFixForAlgorithm(currentPost.mainContent);
     const effectiveReply = currentPost.replyContent || replyContent;
 
-    const updatedScore = calculateHeavyRankerScore(fixedContent, effectiveReply);
-    const updatedLints = lintPostContent(fixedContent, effectiveReply);
+    const ctx = scoreContext();
+    const updatedScore = calculateHeavyRankerScore(fixedContent, effectiveReply, ctx);
+    const updatedLints = lintPostContent(fixedContent, effectiveReply, ctx);
 
     const updatedPosts = [...posts];
     updatedPosts[activePostIndex] = {
@@ -100,6 +115,24 @@ export const PostStudio: React.FC<PostStudioProps> = ({
     onSchedulePost(currentPost);
     setScheduledSuccessId(currentPost.id);
     setTimeout(() => setScheduledSuccessId(null), 2500);
+  };
+
+  const handleAIGenerate = async () => {
+    setAiBusy(true);
+    setAiNote(null);
+    try {
+      const framework = AI_FRAMEWORKS.find(f => f.id === aiFramework) ?? AI_FRAMEWORKS[0];
+      const result = await api.generateAI(project.id, aiFramework, framework.platforms[0]);
+      setPosts(prev => [result.post, ...prev]);
+      setActivePostIndex(0);
+      setAiNote(
+        `${result.accepted ? 'AI draft accepted' : `Best of ${result.rounds} rounds`} — score ${result.post.algorithmScore.netScore}/100 after ${result.rounds} round${result.rounds > 1 ? 's' : ''}.`
+      );
+    } catch (err) {
+      setAiNote(`AI generation failed: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setAiBusy(false);
+    }
   };
 
   return (
@@ -181,7 +214,8 @@ export const PostStudio: React.FC<PostStudioProps> = ({
         </div>
 
         {/* Generate More Dropdown/Buttons */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          <div className="flex items-center gap-2 flex-wrap justify-end">
           <span className="text-[11px] font-mono text-zinc-500 hidden sm:inline">Add Angle:</span>
           <button
             onClick={() => handleGenerateCustom('post-mortem')}
@@ -201,6 +235,40 @@ export const PostStudio: React.FC<PostStudioProps> = ({
           >
             Reddit 9:1 Story
           </button>
+
+          {backend.geminiConfigured && (
+            <>
+              <select
+                value={aiFramework}
+                onChange={(e) => setAiFramework(e.target.value)}
+                className="bg-brand-surface border border-emerald-500/30 rounded-lg px-2 py-1.5 text-[11px] font-mono text-zinc-200 focus:outline-none focus:border-emerald-400 cursor-pointer"
+                title="AI framework (Gemini)"
+              >
+                {AI_FRAMEWORKS.map((f) => (
+                  <option key={f.id} value={f.id} className="bg-brand-surface">
+                    {f.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={handleAIGenerate}
+                disabled={aiBusy}
+                className="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-[11px] font-mono text-emerald-400 hover:text-white hover:bg-emerald-500/20 transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+              >
+                {aiBusy ? (
+                  <span className="w-3 h-3 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5" />
+                )}
+                AI Generate
+              </button>
+            </>
+          )}
+          </div>
+
+          {aiNote && (
+            <span className="text-[10px] font-mono text-emerald-400 text-right">{aiNote}</span>
+          )}
         </div>
       </div>
 

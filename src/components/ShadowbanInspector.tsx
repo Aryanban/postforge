@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShadowbanCheck } from '../types';
+import { ShadowbanCheck } from '@postforge/core';
 import { 
   ShieldCheck, 
   ShieldAlert, 
@@ -42,7 +42,7 @@ export const ShadowbanInspector: React.FC<ShadowbanInspectorProps> = ({
             </h4>
             <p className="text-[11px] text-zinc-400 font-mono">
               {criticalCount === 0 && warningCount === 0 
-                ? 'All 6 anti-shadowban heuristics passed. Nominal.' 
+                ? 'All 7 anti-shadowban heuristics passed. Nominal.' 
                 : `${criticalCount} critical penalty risk(s), ${warningCount} warning(s)`}
             </p>
           </div>

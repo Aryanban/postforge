@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
-import { ProjectProfile } from '../types';
-import { ingestProjectUrl } from '../lib/ingestion/projectCrawler';
+import { ProjectProfile } from '@postforge/core';
+import { ingestProjectUrl } from '@postforge/core';
+import { api, type BackendStatus } from '../lib/api/client';
 import { Globe, Sparkles, ArrowRight, CheckCircle2, Layers, Cpu } from 'lucide-react';
 
 interface ProjectIngestorProps {
   onProjectIngested: (project: ProjectProfile) => void;
   onCancel?: () => void;
   isModal?: boolean;
+  backend?: BackendStatus;
 }
 
 export const ProjectIngestor: React.FC<ProjectIngestorProps> = ({
   onProjectIngested,
   onCancel,
   isModal = false,
+  backend,
 }) => {
   const [urlInput, setUrlInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,8 +26,12 @@ export const ProjectIngestor: React.FC<ProjectIngestorProps> = ({
     if (!urlInput.trim()) return;
 
     setLoading(true);
+    const useBackend = Boolean(backend?.available);
     setStatusLog([
       `Initiating crawler for: ${urlInput.trim()}...`,
+      useBackend
+        ? 'Routing through backend crawler (server-side, no CORS limits)...'
+        : 'Client-side ingestion (start the backend for full DOM crawling)...',
       'Extracting DOM tree & meta headers...',
       'Mapping technical keywords to X SimClusters...',
       'Calculating 9:1 Subreddit distribution targets...'
@@ -32,7 +39,9 @@ export const ProjectIngestor: React.FC<ProjectIngestorProps> = ({
 
     setTimeout(async () => {
       try {
-        const profile = await ingestProjectUrl(urlInput);
+        const profile = useBackend
+          ? await api.ingest(urlInput.trim())
+          : await ingestProjectUrl(urlInput);
         setStatusLog(prev => [...prev, `[SUCCESS] Ingested ${profile.name} (${profile.techStack.length} tech tokens extracted)`]);
         setTimeout(() => {
           setLoading(false);

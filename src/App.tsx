@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ProjectProfile, PostItem, ApiVaultConfig } from './types';
+import { ProjectProfile, PostItem, ApiVaultConfig } from '@postforge/core';
 import { 
   loadStoredProjects, 
   saveProjects, 
@@ -11,22 +11,19 @@ import {
   saveApiConfig, 
   DEFAULT_PROJECT 
 } from './lib/storage/localVault';
-import { generateCustomAngle } from './lib/generators/promptTemplates';
+import { generateCustomAngle } from '@postforge/core';
 import { Navbar } from './components/Navbar';
 import { ProjectIngestor } from './components/ProjectIngestor';
 import { PostStudio } from './components/PostStudio';
 import { ScheduleQueue } from './components/ScheduleQueue';
 import { RedditStrategist } from './components/RedditStrategist';
 import { ApiKeysModal } from './components/ApiKeysModal';
-import { 
-  Sparkles, 
-  Calendar, 
-  MessageSquare, 
-  Globe, 
-  Layers, 
-  Cpu, 
-  ShieldCheck,
-  Github,
+import { useBackend } from './hooks/useBackend';
+import { api } from './lib/api/client';
+import {
+  Calendar,
+  MessageSquare,
+  Globe,
   Zap
 } from 'lucide-react';
 
@@ -35,6 +32,25 @@ export function App() {
   const [activeProjectId, setActiveProjectId] = useState<string>(() => loadActiveProjectId());
   const [queuePosts, setQueuePosts] = useState<PostItem[]>(() => loadStoredPosts());
   const [apiConfig, setApiConfig] = useState<ApiVaultConfig>(() => loadApiConfig());
+
+  const backend = useBackend();
+  const [linkedinBanner, setLinkedinBanner] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const connected = params.get('linkedin_connected');
+    const error = params.get('linkedin_error');
+    if (connected || error) {
+      setLinkedinBanner(
+        error
+          ? { kind: 'error', text: `LinkedIn connection failed: ${error}` }
+          : { kind: 'ok', text: 'LinkedIn account connected to the PostForge vault.' }
+      );
+      window.history.replaceState({}, '', window.location.pathname);
+      const timer = setTimeout(() => setLinkedinBanner(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const [activeTab, setActiveTab] = useState<'studio' | 'queue' | 'reddit' | 'project'>('studio');
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
@@ -73,10 +89,16 @@ export function App() {
     if (!exists) {
       setQueuePosts([post, ...queuePosts]);
     }
+    if (backend.available) {
+      void api.savePost(post); // register with the backend scheduler
+    }
   };
 
   const handleRemovePostFromQueue = (id: string) => {
     setQueuePosts(queuePosts.filter(p => p.id !== id));
+    if (backend.available) {
+      void api.remove(id);
+    }
   };
 
   const handleUpdatePostStatus = (id: string, status: PostItem['status']) => {
@@ -105,6 +127,17 @@ export function App() {
 
       {/* Main Container */}
       <main className="flex-grow max-w-7xl mx-auto w-full px-4 lg:px-8 py-8 space-y-8">
+        {/* LinkedIn OAuth result banner */}
+        {linkedinBanner && (
+          <div className={`rounded-xl border px-4 py-3 text-xs font-mono ${
+            linkedinBanner.kind === 'ok'
+              ? 'border-brand-accent/30 bg-brand-accent/10 text-brand-accent'
+              : 'border-red-500/30 bg-red-500/10 text-red-400'
+          }`}>
+            {linkedinBanner.text}
+          </div>
+        )}
+
         {/* Navigation Tabs */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 pb-3">
           <div className="flex items-center gap-2 overflow-x-auto">
@@ -159,8 +192,12 @@ export function App() {
 
           {/* Quick status pill */}
           <div className="text-[11px] font-mono text-zinc-500 hidden sm:flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-brand-accent"></span>
-            <span>Heavy Ranker Inversion Active</span>
+            <span className={`w-2 h-2 rounded-full ${backend.available ? 'bg-emerald-400' : 'bg-zinc-600'}`}></span>
+            <span>
+              {backend.available
+                ? `Backend ${backend.dryRun ? '(dry-run)' : '(live)'}` 
+                : 'Heavy Ranker Inversion Active'}
+            </span>
           </div>
         </div>
 
@@ -170,6 +207,7 @@ export function App() {
             key={activeProject.id}
             project={activeProject} 
             onSchedulePost={handleSchedulePost}
+            backend={backend}
           />
         )}
 
@@ -180,6 +218,7 @@ export function App() {
             onRemovePost={handleRemovePostFromQueue}
             onUpdateStatus={handleUpdatePostStatus}
             hasApiKeys={hasApiKeys}
+            backend={backend}
           />
         )}
 
@@ -194,7 +233,7 @@ export function App() {
         {/* Tab 4: Ingested Project Overview */}
         {activeTab === 'project' && (
           <div className="space-y-8">
-            <ProjectIngestor onProjectIngested={handleProjectIngested} />
+            <ProjectIngestor onProjectIngested={handleProjectIngested} backend={backend} />
 
             {/* Ingested Profile Specs */}
             <div className="border border-brand-border bg-brand-surface rounded-2xl p-6 md:p-8 space-y-6">
@@ -259,6 +298,7 @@ export function App() {
             isModal={true}
             onProjectIngested={handleProjectIngested}
             onCancel={() => setIsNewProjectModalOpen(false)}
+            backend={backend}
           />
         </div>
       )}
@@ -269,6 +309,7 @@ export function App() {
           config={apiConfig}
           onSave={(updated) => setApiConfig(updated)}
           onClose={() => setIsApiModalOpen(false)}
+          backend={backend}
         />
       )}
 

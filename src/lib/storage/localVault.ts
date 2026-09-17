@@ -1,4 +1,4 @@
-import { ProjectProfile, PostItem, ApiVaultConfig } from '../../types';
+import { ProjectProfile, PostItem, ApiVaultConfig } from '@postforge/core';
 
 const VAULT_KEYS = {
   PROJECTS: 'postforge_projects_v1',

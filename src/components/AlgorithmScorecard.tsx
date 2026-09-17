@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HeavyRankerMetrics } from '../types';
+import { HeavyRankerMetrics } from '@postforge/core';
 import { 
   Zap, 
   Clock, 
