@@ -1,0 +1,30 @@
+{
+  "name": "@postforge/api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "PostForge backend: dispatch, scheduling, and OAuth for X, Reddit, and LinkedIn.",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "lint": "tsc --noEmit",
+    "build": "tsc --noEmit && esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.js --external:better-sqlite3 --external:twitter-api-v2"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.1",
+    "@google/generative-ai": "^0.21.0",
+    "@postforge/core": "^1.0.0",
+    "better-sqlite3": "^11.8.1",
+    "dotenv": "^16.4.7",
+    "fastify": "^5.2.1",
+    "twitter-api-v2": "^1.17.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.13.4",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.21.0",
+    "typescript": "~5.7.2"
+  }
+}
