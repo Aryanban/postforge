@@ -1,0 +1,34 @@
+services:
+  api:
+    image: node:20-alpine
+    working_dir: /app/server
+    command: npx tsx src/index.ts
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./server/.env
+    environment:
+      - PORT=3001
+      - FRONTEND_ORIGIN=http://localhost:4173
+      - DATABASE_PATH=/app/server/data/postforge.db
+    volumes:
+      - .:/app
+      - api_data:/app/server/data
+    restart: unless-stopped
+
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install && npx vite build && npx vite preview --host --port 4173"
+    ports:
+      - "4173:4173"
+    environment:
+      - VITE_API_URL=http://localhost:3001/api
+    volumes:
+      - .:/app
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  api_data:
