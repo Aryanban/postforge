@@ -49,65 +49,62 @@ export const PostStudio: React.FC<PostStudioProps> = ({
     platform: currentPost.platform,
   });
 
-  // Recalculate on manual edit
-  const handleContentChange = (newContent: string) => {
+  // Recalculate on manual edit. One helper replaces three near-identical
+  // handlers: re-score, re-lint, and splice the active post in place.
+  const updatePost = (patch: Partial<PostItem>) => {
+    const base = posts[activePostIndex];
+    const mainContent = patch.mainContent ?? base.mainContent;
+    const replyContent = patch.replyContent ?? base.replyContent;
     const ctx = scoreContext();
-    const updatedScore = calculateHeavyRankerScore(newContent, currentPost.replyContent, ctx);
-    const updatedLints = lintPostContent(newContent, currentPost.replyContent, ctx);
-
     const updatedPosts = [...posts];
     updatedPosts[activePostIndex] = {
-      ...currentPost,
-      mainContent: newContent,
-      algorithmScore: updatedScore,
-      linterChecks: updatedLints.checks,
+      ...base,
+      ...patch,
+      algorithmScore: calculateHeavyRankerScore(mainContent, replyContent, ctx),
+      linterChecks: lintPostContent(mainContent, replyContent, ctx).checks,
     };
     setPosts(updatedPosts);
   };
 
-  const handleReplyChange = (newReply: string) => {
-    const ctx = scoreContext();
-    const updatedScore = calculateHeavyRankerScore(currentPost.mainContent, newReply, ctx);
-    const updatedLints = lintPostContent(currentPost.mainContent, newReply, ctx);
+  const handleContentChange = (newContent: string) => updatePost({ mainContent: newContent });
 
-    const updatedPosts = [...posts];
-    updatedPosts[activePostIndex] = {
-      ...currentPost,
-      replyContent: newReply,
-      algorithmScore: updatedScore,
-      linterChecks: updatedLints.checks,
-    };
-    setPosts(updatedPosts);
-  };
+  const handleReplyChange = (newReply: string) => updatePost({ replyContent: newReply });
 
   const handleAutoFix = () => {
     const { fixedContent, replyContent } = autoFixForAlgorithm(currentPost.mainContent);
-    const effectiveReply = currentPost.replyContent || replyContent;
-
-    const ctx = scoreContext();
-    const updatedScore = calculateHeavyRankerScore(fixedContent, effectiveReply, ctx);
-    const updatedLints = lintPostContent(fixedContent, effectiveReply, ctx);
-
-    const updatedPosts = [...posts];
-    updatedPosts[activePostIndex] = {
-      ...currentPost,
+    updatePost({
       mainContent: fixedContent,
-      replyContent: effectiveReply,
-      algorithmScore: updatedScore,
-      linterChecks: updatedLints.checks,
-    };
-    setPosts(updatedPosts);
+      replyContent: currentPost.replyContent || replyContent,
+    });
   };
 
-  const handleRegenerateBatch = () => {
-    const newBatch = generateDailyPostBatch(project);
-    setPosts(newBatch);
+  const handleRegenerateBatch = async () => {
+    if (backend.available) {
+      try {
+        const batch = await api.generate(project.id);
+        setPosts(batch);
+        setActivePostIndex(0);
+        return;
+      } catch {
+        /* fall through to local generation */
+      }
+    }
+    setPosts(generateDailyPostBatch(project));
     setActivePostIndex(0);
   };
 
-  const handleGenerateCustom = (framework: string) => {
-    const newPost = generateCustomAngle(project, framework);
-    setPosts(prev => [newPost, ...prev]);
+  const handleGenerateCustom = async (framework: string) => {
+    if (backend.available) {
+      try {
+        const batch = await api.generate(project.id, framework);
+        setPosts(prev => [...batch, ...prev]);
+        setActivePostIndex(0);
+        return;
+      } catch {
+        /* fall through to local generation */
+      }
+    }
+    setPosts(prev => [generateCustomAngle(project, framework), ...prev]);
     setActivePostIndex(0);
   };
 
@@ -308,7 +305,7 @@ export const PostStudio: React.FC<PostStudioProps> = ({
                   </span>
                   <span className="text-zinc-500">•</span>
                   <span className="text-zinc-400">
-                    {currentPost.mainContent.length} / 280 chars
+                    {currentPost.mainContent.length} / {currentPost.platform === 'reddit' ? 40000 : currentPost.platform === 'linkedin' ? 3000 : 280} chars
                   </span>
                 </div>
 

@@ -85,16 +85,19 @@ export interface ShadowbanCheck {
   fixable: boolean;
 }
 
+/**
+ * In-memory draft of provider credentials as typed into the web studio.
+ * Secrets are pushed to the server vault on submit and never persisted to the
+ * browser, so this shape exists only transiently in component state.
+ */
 export interface ApiVaultConfig {
   xApiKey?: string;
   xApiSecret?: string;
   xAccessToken?: string;
   xAccessSecret?: string;
-  xBearerToken?: string;
   redditClientId?: string;
   redditClientSecret?: string;
   redditUsername?: string;
   redditPassword?: string;
   geminiApiKey?: string;
-  isApiModeActive: boolean; // false = free 1-click Native Intent launcher
 }

@@ -16,7 +16,6 @@ const VAULT_KEYS = {
  * pick a dispatch mode, with zero credential material at rest in the client.
  */
 export interface PersistedApiConfig {
-  isApiModeActive: boolean;
   configuredProviders: {
     x: boolean;
     reddit: boolean;
@@ -26,7 +25,6 @@ export interface PersistedApiConfig {
 }
 
 export const EMPTY_API_CONFIG: PersistedApiConfig = {
-  isApiModeActive: false,
   configuredProviders: { x: false, reddit: false, linkedin: false, gemini: false },
 };
 
@@ -95,7 +93,6 @@ export function loadApiConfig(): PersistedApiConfig {
     if (!raw) return EMPTY_API_CONFIG;
     const parsed = JSON.parse(raw) as Partial<PersistedApiConfig>;
     return {
-      isApiModeActive: Boolean(parsed.isApiModeActive),
       configuredProviders: {
         x: Boolean(parsed.configuredProviders?.x),
         reddit: Boolean(parsed.configuredProviders?.reddit),

@@ -76,6 +76,31 @@ export function App() {
     saveApiConfig(apiConfig);
   }, [apiConfig]);
 
+  /**
+   * When the backend comes online, fold in any posts that live server-side but
+   * not in the local queue (e.g. created via the MCP server or another device).
+   * Local state is authoritative for ordering; the merge is additive only.
+   */
+  useEffect(() => {
+    if (!backend.available) return;
+    let active = true;
+    void (async () => {
+      try {
+        const serverPosts = await api.listPosts();
+        if (!active) return;
+        setQueuePosts(prev => {
+          const localIds = new Set(prev.map(p => p.id));
+          return [...prev, ...serverPosts.filter(p => !localIds.has(p.id))];
+        });
+      } catch {
+        /* offline fallback — local state remains authoritative */
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [backend.available]);
+
   const handleProjectIngested = (newProject: ProjectProfile) => {
     const exists = projects.some(p => p.id === newProject.id);
     const updated = exists ? projects.map(p => p.id === newProject.id ? newProject : p) : [newProject, ...projects];
@@ -104,6 +129,13 @@ export function App() {
 
   const handleUpdatePostStatus = (id: string, status: PostItem['status']) => {
     setQueuePosts(queuePosts.map(p => p.id === id ? { ...p, status } : p));
+  };
+
+  const handleReschedulePost = (id: string, scheduledDate: string) => {
+    setQueuePosts(queuePosts.map(p => (p.id === id ? { ...p, scheduledDate } : p)));
+    if (backend.available) {
+      void api.updatePost(id, { scheduledDate });
+    }
   };
 
   const handleGenerateRedditStory = () => {
@@ -223,7 +255,7 @@ export function App() {
             posts={queuePosts}
             onRemovePost={handleRemovePostFromQueue}
             onUpdateStatus={handleUpdatePostStatus}
-            hasApiKeys={hasApiKeys}
+            onReschedulePost={handleReschedulePost}
             backend={backend}
           />
         )}

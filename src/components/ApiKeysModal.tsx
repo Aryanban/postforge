@@ -28,7 +28,7 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
 }) => {
   // Newly typed secrets live in memory ONLY. They are pushed to the backend's
   // encrypted vault on submit and never written to localStorage.
-  const [draft, setDraft] = useState<ApiVaultConfig>({ isApiModeActive: settings.isApiModeActive });
+  const [draft, setDraft] = useState<ApiVaultConfig>({});
   const [activeTab, setActiveTab] = useState<'x' | 'reddit' | 'linkedin' | 'ai'>('x');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -92,7 +92,6 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
 
     // Persist ONLY the booleans — never the secrets.
     onSave({
-      isApiModeActive: draft.isApiModeActive ?? false,
       configuredProviders: {
         x: settings.configuredProviders.x || Boolean(draft.xApiKey),
         reddit: settings.configuredProviders.reddit || Boolean(draft.redditClientId),
@@ -148,41 +147,23 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
           </div>
         )}
 
-        {/* Dispatch Mode Toggle */}
+        {/* Dispatch mode explainer */}
         <div className="p-4 rounded-xl border border-brand-border bg-brand-bg space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-xs font-mono font-bold text-white uppercase">Automated API Dispatch Mode</h4>
-              <p className="text-[11px] text-zinc-500">
-                Turn ON if you have paid X API Basic keys ($100/mo) or standard Reddit API credentials.
-              </p>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={Boolean(draft.isApiModeActive)}
-              aria-label="Automated API dispatch mode"
-              onClick={() => setDraft({ ...draft, isApiModeActive: !draft.isApiModeActive })}
-              className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
-                draft.isApiModeActive ? 'bg-brand-accent' : 'bg-zinc-800'
-              }`}
-            >
-              <span
-                className={`w-4 h-4 rounded-full bg-zinc-950 absolute top-1 transition-transform ${
-                  draft.isApiModeActive ? 'left-7' : 'left-1'
-                }`}
-              />
-            </button>
+          <div>
+            <h4 className="text-xs font-mono font-bold text-white uppercase">How dispatch works</h4>
+            <p className="text-[11px] text-zinc-500 mt-1">
+              With the backend running, approved posts ship automatically at their jittered time
+              (simulated in dry-run, live with provider keys stored above). Without the backend,
+              PostForge falls back to zero-cost 1-Click Native Intents — no paid API needed.
+            </p>
           </div>
-
-          {!draft.isApiModeActive && (
-            <div className="p-2.5 rounded-lg bg-brand-surface border border-white/5 text-[11px] font-mono text-zinc-400 flex items-start gap-2">
-              <Info className="w-4 h-4 text-brand-accent shrink-0 mt-0.5" />
-              <span>
-                <strong>Zero-Cost Intent Mode Active:</strong> You don't need any paid X API credentials! PostForge will format posts algorithmically and launch them via 1-click Native Intents.
-              </span>
-            </div>
-          )}
+          <div className="p-2.5 rounded-lg bg-brand-surface border border-white/5 text-[11px] font-mono text-zinc-400 flex items-start gap-2">
+            <Info className="w-4 h-4 text-brand-accent shrink-0 mt-0.5" />
+            <span>
+              <strong>Keys never leave the server.</strong> Everything you type here is pushed to the
+              AES-256-GCM vault and dropped from browser memory immediately.
+            </span>
+          </div>
         </div>
 
         {/* Tab switcher */}

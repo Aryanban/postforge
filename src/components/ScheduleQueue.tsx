@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PostItem } from '@postforge/core';
-import { api, type BackendStatus } from '../lib/api/client';
+import { api, type BackendStatus, type DispatchLogEntry } from '../lib/api/client';
 import { 
   Calendar, 
   Clock, 
@@ -11,14 +11,16 @@ import {
   Trash2, 
   Sparkles, 
   AlertCircle,
-  Zap
+  Zap,
+  ScrollText,
+  ChevronDown
 } from 'lucide-react';
 
 interface ScheduleQueueProps {
   posts: PostItem[];
   onRemovePost: (id: string) => void;
   onUpdateStatus: (id: string, status: PostItem['status']) => void;
-  hasApiKeys: boolean;
+  onReschedulePost: (id: string, scheduledDate: string) => void;
   backend: BackendStatus;
 }
 
@@ -26,7 +28,7 @@ export const ScheduleQueue: React.FC<ScheduleQueueProps> = ({
   posts,
   onRemovePost,
   onUpdateStatus,
-  hasApiKeys,
+  onReschedulePost,
   backend,
 }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -34,6 +36,38 @@ export const ScheduleQueue: React.FC<ScheduleQueueProps> = ({
   const [dispatchResults, setDispatchResults] = useState<
     Record<string, { remoteId: string; simulated: boolean }>
   >({});
+  const [logs, setLogs] = useState<DispatchLogEntry[]>([]);
+  const [logsOpen, setLogsOpen] = useState(false);
+
+  const refreshLogs = async () => {
+    try {
+      setLogs(await api.logs(25));
+    } catch {
+      /* offline — log panel simply stays empty */
+    }
+  };
+
+  const handleApprove = async (post: PostItem) => {
+    setBusyId(post.id);
+    try {
+      const updated = await api.approve(post.id);
+      onUpdateStatus(post.id, updated.status);
+      void refreshLogs();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setDispatchResults(prev => ({
+        ...prev,
+        [post.id]: { remoteId: `error: ${message}`, simulated: false },
+      }));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const toggleLogs = async () => {
+    if (!logsOpen) await refreshLogs();
+    setLogsOpen(!logsOpen);
+  };
 
   const handleBackendDispatch = async (post: PostItem) => {
     setBusyId(post.id);
@@ -41,6 +75,7 @@ export const ScheduleQueue: React.FC<ScheduleQueueProps> = ({
       const result = await api.dispatch(post.id);
       setDispatchResults(prev => ({ ...prev, [post.id]: result }));
       onUpdateStatus(post.id, 'published');
+      void refreshLogs();
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setDispatchResults(prev => ({
@@ -131,9 +166,7 @@ export const ScheduleQueue: React.FC<ScheduleQueueProps> = ({
               Backend Auto-Dispatch {backend.dryRun ? '(dry-run)' : '(live)'}
             </span>
           ) : (
-            <span className={hasApiKeys ? 'text-emerald-400 font-bold' : 'text-brand-accent font-bold'}>
-              {hasApiKeys ? 'Direct API Automated' : '1-Click Native Intent (Zero-Cost)'}
-            </span>
+            <span className="text-brand-accent font-bold">1-Click Native Intent (Zero-Cost)</span>
           )}
         </div>
       </div>
@@ -171,6 +204,20 @@ export const ScheduleQueue: React.FC<ScheduleQueueProps> = ({
                   <Clock className="w-3.5 h-3.5" />
                   <span>{formattedDate}</span>
                   <span className="text-[10px] text-zinc-500">(+{post.jitterMinutes}m jitter)</span>
+                  <label className="sr-only" htmlFor={`schedule-${post.id}`}>
+                    Reschedule {post.frameworkName}
+                  </label>
+                  <input
+                    id={`schedule-${post.id}`}
+                    type="datetime-local"
+                    value={new Date(post.scheduledDate).toISOString().slice(0, 16)}
+                    onChange={e => {
+                      const value = e.target.value;
+                      if (value) onReschedulePost(post.id, new Date(value).toISOString());
+                    }}
+                    title="Override the jittered schedule time"
+                    className="bg-brand-bg border border-brand-border rounded-lg px-1.5 py-0.5 text-[10px] text-zinc-300 focus:outline-none focus:border-brand-accent cursor-pointer"
+                  />
                 </div>
               </div>
 
@@ -212,6 +259,22 @@ export const ScheduleQueue: React.FC<ScheduleQueueProps> = ({
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
+
+                  {backend.available && (post.status === 'draft' || post.status === 'pending') && (
+                    <button
+                      onClick={() => handleApprove(post)}
+                      disabled={busyId === post.id}
+                      title="Approve for the backend scheduler to dispatch at the jittered time"
+                      className="px-3 py-1.5 rounded-lg border border-zinc-600 hover:border-zinc-400 text-zinc-300 text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      {busyId === post.id ? (
+                        <span className="w-3 h-3 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Check className="w-3.5 h-3.5" />
+                      )}
+                      Approve
+                    </button>
+                  )}
                 </div>
 
                 {/* Dispatch Trigger */}
@@ -289,6 +352,47 @@ export const ScheduleQueue: React.FC<ScheduleQueueProps> = ({
           );
         })}
       </div>
+
+      {/* Dispatch history */}
+      {backend.available && (
+        <div className="border-t border-white/5 pt-4 space-y-3">
+          <button
+            type="button"
+            onClick={() => void toggleLogs()}
+            className="flex items-center gap-2 text-xs font-mono text-zinc-400 hover:text-white transition-colors cursor-pointer"
+          >
+            <ScrollText className="w-3.5 h-3.5" />
+            <span>Dispatch Log</span>
+            <ChevronDown
+              className={`w-3.5 h-3.5 transition-transform ${logsOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
+
+          {logsOpen && (
+            <div className="font-mono text-[11px] space-y-1 max-h-48 overflow-y-auto">
+              {logs.length === 0 ? (
+                <p className="text-zinc-600">No dispatch attempts yet.</p>
+              ) : (
+                logs.map(entry => (
+                  <div key={entry.id} className="flex items-start gap-2">
+                    <span
+                      className={
+                        entry.status === 'success' ? 'text-emerald-400' : 'text-red-400'
+                      }
+                    >
+                      {entry.status === 'success' ? '✓' : '✗'}
+                    </span>
+                    <span className="text-zinc-600 shrink-0">
+                      {new Date(entry.at).toLocaleString()}
+                    </span>
+                    <span className="text-zinc-400 truncate">{entry.message}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

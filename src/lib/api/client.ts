@@ -105,6 +105,9 @@ export const api = {
 
   listPosts: () => request<PostItem[]>('/posts'),
 
+  updatePost: (id: string, patch: { mainContent?: string; replyContent?: string; scheduledDate?: string }) =>
+    request<PostItem>(`/posts/${id}`, { method: 'PUT', body: JSON.stringify(patch) }),
+
   approve: (id: string) =>
     request<PostItem>(`/posts/${id}/approve`, { method: 'POST' }),
 
