@@ -62,6 +62,17 @@ CREATE TABLE IF NOT EXISTS credentials (
   blob TEXT NOT NULL,
   updatedAt TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS post_performance (
+  postId TEXT PRIMARY KEY,
+  impressions INTEGER,
+  likes INTEGER,
+  replies INTEGER,
+  bookmarks INTEGER,
+  retweets INTEGER,
+  notes TEXT,
+  recordedAt TEXT NOT NULL
+);
 `;
 
 let instance: Database.Database | null = null;

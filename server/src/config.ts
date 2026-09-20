@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { localTimezone } from '@postforge/core';
 
 dotenv.config();
 
@@ -71,6 +72,8 @@ export const config = {
   host: env('HOST') || '127.0.0.1',
   frontendOrigin: env('FRONTEND_ORIGIN') || 'http://localhost:5173',
   dbPath,
+  /** IANA zone whose audience the schedule targets; defaults to the host's. */
+  timezone: env('TIMEZONE') || localTimezone(),
   /** When true the full pipeline runs but dispatch is simulated (no paid API calls). */
   dryRun: env('DRY_RUN').toLowerCase() !== 'false',
   vaultKey: env('VAULT_ENCRYPTION_KEY'),

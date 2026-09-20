@@ -86,6 +86,22 @@ export interface ShadowbanCheck {
 }
 
 /**
+ * Manually logged outcomes for a dispatched post — the closing half of the
+ * feedback loop. PostForge scores a draft before it ships; this records what
+ * actually happened, so score and reality can be compared.
+ */
+export interface PostPerformance {
+  postId: string;
+  impressions?: number;
+  likes?: number;
+  replies?: number;
+  bookmarks?: number;
+  retweets?: number;
+  notes?: string;
+  recordedAt: string;
+}
+
+/**
  * In-memory draft of provider credentials as typed into the web studio.
  * Secrets are pushed to the server vault on submit and never persisted to the
  * browser, so this shape exists only transiently in component state.

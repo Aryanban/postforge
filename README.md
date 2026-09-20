@@ -168,6 +168,9 @@ Six frameworks: `morning-velocity`, `evening-debate`, `post-mortem`, `thread-hoo
 | `POST` | `/api/posts/:id/approve` | Approve for the scheduler |
 | `POST` | `/api/posts/:id/dispatch` | Dispatch immediately |
 | `GET` | `/api/dispatch/log` | Recent dispatch history |
+| `PUT` | `/api/posts/:id/performance` | Log a published post's real engagement (feedback loop) |
+| `GET` | `/api/posts/:id/performance` | Recorded engagement for one post |
+| `GET` | `/api/performance` | Every recorded result joined to its predicted score |
 | `GET` `PUT` | `/api/config/*` | Provider status + encrypted credential vault |
 | `GET` | `/api/auth/linkedin` · `/callback` | LinkedIn OAuth 2.0 |
 
@@ -217,7 +220,7 @@ stateful operations proxy through the API.
 ## Development
 
 ```bash
-npm test                              # 37 vitest tests across the core + AI loop
+npm test                              # 45 vitest tests across the core + AI loop + DB
 npm run lint                          # typecheck web
 npm -w @postforge/api run lint        # typecheck api
 npm -w @postforge/mcp run lint        # typecheck mcp

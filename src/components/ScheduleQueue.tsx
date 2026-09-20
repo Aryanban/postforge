@@ -38,6 +38,9 @@ export const ScheduleQueue: React.FC<ScheduleQueueProps> = ({
   >({});
   const [logs, setLogs] = useState<DispatchLogEntry[]>([]);
   const [logsOpen, setLogsOpen] = useState(false);
+  const [perfPostId, setPerfPostId] = useState<string | null>(null);
+  const [perfDraft, setPerfDraft] = useState({ impressions: '', likes: '', replies: '', bookmarks: '' });
+  const [perfError, setPerfError] = useState<string | null>(null);
 
   const refreshLogs = async () => {
     try {
@@ -67,6 +70,42 @@ export const ScheduleQueue: React.FC<ScheduleQueueProps> = ({
   const toggleLogs = async () => {
     if (!logsOpen) await refreshLogs();
     setLogsOpen(!logsOpen);
+  };
+
+  const openPerfForm = async (post: PostItem) => {
+    setPerfError(null);
+    setPerfPostId(post.id);
+    try {
+      const existing = await api.getPerformance(post.id);
+      setPerfDraft({
+        impressions: existing.impressions?.toString() ?? '',
+        likes: existing.likes?.toString() ?? '',
+        replies: existing.replies?.toString() ?? '',
+        bookmarks: existing.bookmarks?.toString() ?? '',
+      });
+    } catch {
+      setPerfDraft({ impressions: '', likes: '', replies: '', bookmarks: '' });
+    }
+  };
+
+  const submitPerf = async (post: PostItem) => {
+    setPerfError(null);
+    const num = (v: string): number | undefined => {
+      const n = Number(v);
+      return v.trim() === '' || Number.isNaN(n) ? undefined : Math.max(0, Math.floor(n));
+    };
+    try {
+      await api.logPerformance(post.id, {
+        impressions: num(perfDraft.impressions),
+        likes: num(perfDraft.likes),
+        replies: num(perfDraft.replies),
+        bookmarks: num(perfDraft.bookmarks),
+      });
+      setPerfPostId(null);
+      void refreshLogs();
+    } catch (err) {
+      setPerfError(err instanceof Error ? err.message : String(err));
+    }
   };
 
   const handleBackendDispatch = async (post: PostItem) => {
@@ -235,6 +274,60 @@ export const ScheduleQueue: React.FC<ScheduleQueueProps> = ({
                   <p className="text-zinc-400 whitespace-pre-wrap">
                     {post.replyContent}
                   </p>
+                </div>
+              )}
+
+              {/* Performance feedback loop: score vs recorded reality */}
+              {post.status === 'published' && (
+                <div className="bg-brand-surface p-3.5 rounded-xl border border-brand-border/60 text-xs font-mono space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold text-zinc-400">
+                      Feedback loop — Heavy Ranker predicted {post.algorithmScore.netScore}/100
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void openPerfForm(post)}
+                      className="text-[10px] text-brand-accent hover:text-white transition-colors cursor-pointer"
+                    >
+                      {perfPostId === post.id ? 'Cancel' : 'Log results'}
+                    </button>
+                  </div>
+
+                  {perfPostId === post.id ? (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {(['impressions', 'likes', 'replies', 'bookmarks'] as const).map(field => (
+                          <label key={field} className="block">
+                            <span className="text-[9px] uppercase text-zinc-500">{field}</span>
+                            <input
+                              type="number"
+                              min={0}
+                              inputMode="numeric"
+                              value={perfDraft[field]}
+                              onChange={e => setPerfDraft({ ...perfDraft, [field]: e.target.value })}
+                              placeholder="0"
+                              className="w-full bg-brand-bg border border-brand-border rounded-lg px-2 py-1 text-zinc-200 focus:outline-none focus:border-brand-accent"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                      {perfError && (
+                        <p className="text-[10px] text-red-400">error: {perfError}</p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => void submitPerf(post)}
+                        className="px-3 py-1 rounded-lg bg-brand-accent text-zinc-950 font-bold text-[10px] uppercase hover:bg-brand-accent/90 cursor-pointer"
+                      >
+                        Save results
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-zinc-500">
+                      Paste what the platform's analytics show after publishing to close the loop and
+                      compare prediction against reality.
+                    </p>
+                  )}
                 </div>
               )}
 

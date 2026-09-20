@@ -1,4 +1,4 @@
-import type { PostItem, ProjectProfile } from '@postforge/core';
+import type { PostItem, PostPerformance, ProjectProfile } from '@postforge/core';
 import { db } from './client.js';
 import { postToRow, projectToRow, rowToPost, rowToProject } from './mappers.js';
 
@@ -154,4 +154,44 @@ export function getCredential(provider: string): string | null {
     | { blob: string }
     | undefined;
   return row?.blob ?? null;
+}
+
+/** Records what a dispatched post actually achieved (the feedback loop). */
+export function upsertPerformance(entry: PostPerformance): void {
+  // better-sqlite3 requires every named parameter to be present, so omitted
+  // metrics are normalized to null rather than left undefined.
+  const row = {
+    postId: entry.postId,
+    impressions: entry.impressions ?? null,
+    likes: entry.likes ?? null,
+    replies: entry.replies ?? null,
+    bookmarks: entry.bookmarks ?? null,
+    retweets: entry.retweets ?? null,
+    notes: entry.notes ?? null,
+    recordedAt: entry.recordedAt,
+  };
+  db()
+    .prepare(
+      `INSERT INTO post_performance (postId, impressions, likes, replies, bookmarks, retweets, notes, recordedAt)
+       VALUES (@postId, @impressions, @likes, @replies, @bookmarks, @retweets, @notes, @recordedAt)
+       ON CONFLICT(postId) DO UPDATE SET
+         impressions=excluded.impressions, likes=excluded.likes, replies=excluded.replies,
+         bookmarks=excluded.bookmarks, retweets=excluded.retweets, notes=excluded.notes,
+         recordedAt=excluded.recordedAt`
+    )
+    .run(row);
+}
+
+export function getPerformance(postId: string): PostPerformance | null {
+  const row = db()
+    .prepare('SELECT * FROM post_performance WHERE postId = ?')
+    .get(postId) as Partial<PostPerformance> | undefined;
+  return row ? (row as PostPerformance) : null;
+}
+
+export function listPerformance(): PostPerformance[] {
+  return db()
+    .prepare('SELECT * FROM post_performance ORDER BY recordedAt DESC')
+    .all()
+    .map(r => r as PostPerformance);
 }

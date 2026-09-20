@@ -10,12 +10,15 @@ import {
 import {
   deletePost,
   getPost,
+  getPerformance,
   getProject,
   insertLog,
   listPosts,
+  listPerformance,
   markPublished,
   recentLogs,
   upsertPost,
+  upsertPerformance,
 } from '../db/queries.js';
 import { dispatchPost, scheduleDelayedReply } from '../dispatch.js';
 
@@ -50,6 +53,15 @@ const EditSchema = z.object({
   mainContent: z.string().optional(),
   replyContent: z.string().optional(),
   scheduledDate: z.string().optional(),
+});
+
+const PerformanceSchema = z.object({
+  impressions: z.number().int().nonnegative().optional(),
+  likes: z.number().int().nonnegative().optional(),
+  replies: z.number().int().nonnegative().optional(),
+  bookmarks: z.number().int().nonnegative().optional(),
+  retweets: z.number().int().nonnegative().optional(),
+  notes: z.string().max(500).optional(),
 });
 
 /** Ensures every stored post carries a fresh Heavy Ranker score + linter pass. */
@@ -166,5 +178,45 @@ export async function postRoutes(app: FastifyInstance): Promise<void> {
     const raw = (req.query as { limit?: string }).limit;
     const limit = raw ? Math.min(Number(raw) || 50, 200) : 50;
     return recentLogs(limit);
+  });
+
+  /**
+   * Records the real-world outcome of a dispatched post. Manual entry by design:
+   * reading live metrics needs a paid X tier and has no Reddit/LinkedIn
+   * equivalent, so the user pastes what each platform's analytics shows.
+   */
+  app.put('/posts/:id/performance', async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const post = getPost(id);
+    if (!post) return reply.code(404).send({ error: 'post not found' });
+
+    const parsed = PerformanceSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: parsed.error.flatten().fieldErrors });
+    }
+    const entry = { postId: id, ...parsed.data, recordedAt: new Date().toISOString() };
+    upsertPerformance(entry);
+    return entry;
+  });
+
+  app.get('/posts/:id/performance', async (req) => {
+    const { id } = req.params as { id: string };
+    return getPerformance(id) ?? {};
+  });
+
+  /**
+   * Score-vs-reality: joins every performance record to its post so the caller
+   * can see whether high Heavy Ranker scores actually produced engagement.
+   */
+  app.get('/performance', async () => {
+    return listPerformance().map(entry => {
+      const post = getPost(entry.postId);
+      return {
+        ...entry,
+        netScore: post?.algorithmScore?.netScore ?? null,
+        platform: post?.platform ?? null,
+        framework: post?.framework ?? null,
+      };
+    });
   });
 }

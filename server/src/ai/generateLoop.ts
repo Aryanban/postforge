@@ -11,6 +11,7 @@ import {
   type ProjectProfile,
 } from '@postforge/core';
 import { generateDraft } from './gemini.js';
+import { config } from '../config.js';
 
 const MAX_ROUNDS = 3;
 const ACCEPT_THRESHOLD = 80;
@@ -125,7 +126,7 @@ function toPost(
   lints: LinterResult
 ): PostItem {
   const slot = platform === 'reddit' ? 'evening' : 'morning';
-  const timing = calculateJitteredSchedule(slot);
+  const timing = calculateJitteredSchedule(slot, undefined, config.timezone);
   return {
     id: `ai-${Date.now()}`,
     projectId: project.id,

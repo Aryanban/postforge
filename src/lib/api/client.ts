@@ -1,4 +1,4 @@
-import type { PostItem, PlatformType, ProjectProfile } from '@postforge/core';
+import type { PostItem, PlatformType, PostPerformance, ProjectProfile } from '@postforge/core';
 
 const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3001/api';
 
@@ -130,4 +130,13 @@ export const api = {
 
   logs: (limit = 50) =>
     request<DispatchLogEntry[]>(`/dispatch/log?limit=${limit}`),
+
+  logPerformance: (id: string, metrics: Omit<PostPerformance, 'postId' | 'recordedAt'>) =>
+    request<PostPerformance>(`/posts/${id}/performance`, {
+      method: 'PUT',
+      body: JSON.stringify(metrics),
+    }),
+
+  getPerformance: (id: string) =>
+    request<Partial<PostPerformance>>(`/posts/${id}/performance`),
 };
