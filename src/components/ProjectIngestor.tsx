@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { ProjectProfile } from '@postforge/core';
-import { ingestProjectUrl } from '@postforge/core';
 import { api, type BackendStatus } from '../lib/api/client';
-import { Globe, Sparkles, ArrowRight, CheckCircle2, Layers, Cpu } from 'lucide-react';
+import { ingestOffline } from '../lib/ingestion/offlineIngest';
+import { Globe, Sparkles, ArrowRight, CheckCircle2, Layers, Cpu, AlertCircle } from 'lucide-react';
 
 interface ProjectIngestorProps {
   onProjectIngested: (project: ProjectProfile) => void;
@@ -20,19 +20,21 @@ export const ProjectIngestor: React.FC<ProjectIngestorProps> = ({
   const [urlInput, setUrlInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [statusLog, setStatusLog] = useState<string[]>([]);
+  const [hasError, setHasError] = useState(false);
 
   const handleIngest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!urlInput.trim()) return;
 
-    setLoading(true);
     const useBackend = Boolean(backend?.available);
+    setLoading(true);
+    setHasError(false);
     setStatusLog([
       `Initiating crawler for: ${urlInput.trim()}...`,
       useBackend
         ? 'Routing through backend crawler (server-side, no CORS limits)...'
-        : 'Client-side ingestion (start the backend for full DOM crawling)...',
-      'Extracting DOM tree & meta headers...',
+        : 'Backend offline — using browser-safe ingestion (GitHub API only)...',
+      'Resolving target domain...',
       'Mapping technical keywords to X SimClusters...',
       'Calculating 9:1 Subreddit distribution targets...'
     ]);
@@ -41,13 +43,19 @@ export const ProjectIngestor: React.FC<ProjectIngestorProps> = ({
       try {
         const profile = useBackend
           ? await api.ingest(urlInput.trim())
-          : await ingestProjectUrl(urlInput);
-        setStatusLog(prev => [...prev, `[SUCCESS] Ingested ${profile.name} (${profile.techStack.length} tech tokens extracted)`]);
+          : (await ingestOffline(urlInput.trim())).profile;
+        setStatusLog(prev => [
+          ...prev,
+          `[SUCCESS] Ingested ${profile.name} (${profile.techStack.length} tech tokens extracted)`
+        ]);
         setTimeout(() => {
           setLoading(false);
           onProjectIngested(profile);
         }, 500);
       } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        setStatusLog(prev => [...prev, `[ERROR] Ingestion failed: ${message}`]);
+        setHasError(true);
         setLoading(false);
       }
     }, 1200);
@@ -126,12 +134,34 @@ export const ProjectIngestor: React.FC<ProjectIngestorProps> = ({
           <div className="text-[10px] uppercase font-bold text-brand-accent tracking-wider flex items-center gap-1.5 pb-1 border-b border-white/5">
             <Cpu className="w-3 h-3" /> Crawl &amp; Synthesis Stream
           </div>
-          {statusLog.map((log, idx) => (
-            <div key={idx} className="flex items-center gap-2">
-              <span className="text-zinc-600 select-none">&gt;</span>
-              <span className={log.includes('[SUCCESS]') ? 'text-brand-accent font-bold' : ''}>{log}</span>
+          {statusLog.map((log, idx) => {
+            const isError = log.startsWith('[ERROR]');
+            const isSuccess = log.startsWith('[SUCCESS]');
+            return (
+              <div key={idx} className="flex items-start gap-2">
+                <span className="text-zinc-600 select-none">&gt;</span>
+                <span
+                  className={
+                    isError
+                      ? 'text-red-400 font-bold'
+                      : isSuccess
+                        ? 'text-brand-accent font-bold'
+                        : ''
+                  }
+                >
+                  {isError && <AlertCircle className="w-3 h-3 inline mr-1 -mt-0.5" />}
+                  {isSuccess && <CheckCircle2 className="w-3 h-3 inline mr-1 -mt-0.5" />}
+                  {log}
+                </span>
+              </div>
+            );
+          })}
+          {hasError && (
+            <div className="text-red-400/80 text-[11px] pt-2 border-t border-white/5">
+              Start the backend (<span className="font-bold">npm -w @postforge/api run dev</span>) to
+ retry with the full server-side crawler.
             </div>
-          ))}
+          )}
         </div>
       )}
 

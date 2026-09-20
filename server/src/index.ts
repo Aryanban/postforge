@@ -12,7 +12,7 @@ import { aiRoutes } from './routes/ai.js';
 async function main(): Promise<void> {
   db(); // create tables on boot
 
-  const app = Fastify({ logger: true });
+  const app = Fastify({ logger: true, bodyLimit: 1024 * 1024 });
   await app.register(cors, {
     origin: [config.frontendOrigin, 'http://127.0.0.1:5173'],
     credentials: true,
@@ -23,6 +23,7 @@ async function main(): Promise<void> {
     service: 'postforge-api',
     dryRun: config.dryRun,
     providers: configuredProviders(),
+    geminiConfigured: Boolean(config.geminiApiKey),
   }));
 
   await app.register(projectRoutes, { prefix: '/api' });
@@ -33,9 +34,12 @@ async function main(): Promise<void> {
 
   startScheduler();
 
-  await app.listen({ host: '0.0.0.0', port: config.port });
+  await app.listen({ host: config.host, port: config.port });
   const mode = config.dryRun ? 'DRY RUN (simulated dispatch)' : 'LIVE dispatch';
-  app.log.info(`PostForge API listening on :${config.port} — ${mode}`);
+  app.log.info(`PostForge API listening on ${config.host}:${config.port} — ${mode}`);
+  if (config.host === '127.0.0.1') {
+    app.log.info('Loopback-only: set HOST=0.0.0.0 only behind an authenticating reverse proxy.');
+  }
 }
 
 main().catch((err) => {

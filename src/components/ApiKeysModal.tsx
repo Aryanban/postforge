@@ -1,64 +1,114 @@
 import React, { useState } from 'react';
 import { ApiVaultConfig } from '@postforge/core';
 import { api, LINKEDIN_CONNECT_URL, type BackendStatus } from '../lib/api/client';
-import { 
-  Key, 
-  X, 
-  ShieldCheck, 
-  Save, 
-  Info, 
-  CheckCircle2, 
-  Sparkles,
+import type { PersistedApiConfig } from '../lib/storage/localVault';
+import {
+  Key,
+  X,
+  Save,
+  Info,
+  CheckCircle2,
   Lock,
-  Linkedin
+  Linkedin,
+  AlertCircle,
 } from 'lucide-react';
 
 interface ApiKeysModalProps {
-  config: ApiVaultConfig;
-  onSave: (config: ApiVaultConfig) => void;
+  settings: PersistedApiConfig;
+  onSave: (settings: PersistedApiConfig) => void;
   onClose: () => void;
   backend: BackendStatus;
 }
 
 export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
-  config,
+  settings,
   onSave,
   onClose,
   backend,
 }) => {
-  const [formData, setFormData] = useState<ApiVaultConfig>({ ...config });
+  // Newly typed secrets live in memory ONLY. They are pushed to the backend's
+  // encrypted vault on submit and never written to localStorage.
+  const [draft, setDraft] = useState<ApiVaultConfig>({ isApiModeActive: settings.isApiModeActive });
   const [activeTab, setActiveTab] = useState<'x' | 'reddit' | 'linkedin' | 'ai'>('x');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
-    // Mirror provider keys into the encrypted backend vault when available,
-    // so the scheduler can dispatch on your behalf.
-    if (backend.available) {
-      if (formData.xApiKey) {
-        void api.putCredentials('x', {
-          appKey: formData.xApiKey,
-          appSecret: formData.xApiSecret,
-          accessToken: formData.xAccessToken,
-          accessSecret: formData.xAccessSecret,
+    setError(null);
+
+    if (!backend.available) {
+      setError(
+        'The backend is offline — credentials can only be stored in the server-side encrypted vault. Start it with: npm -w @postforge/api run dev'
+      );
+      return;
+    }
+
+    setSaving(true);
+    const failures: string[] = [];
+
+    // X: only push when the full OAuth 1.0a set is present.
+    if (draft.xApiKey && draft.xApiSecret && draft.xAccessToken && draft.xAccessSecret) {
+      try {
+        await api.putCredentials('x', {
+          appKey: draft.xApiKey,
+          appSecret: draft.xApiSecret,
+          accessToken: draft.xAccessToken,
+          accessSecret: draft.xAccessSecret,
         });
-      }
-      if (formData.redditClientId) {
-        void api.putCredentials('reddit', {
-          clientId: formData.redditClientId,
-          clientSecret: formData.redditClientSecret,
-          username: formData.redditUsername,
-          password: formData.redditPassword,
-        });
+      } catch (err) {
+        failures.push(`X: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
+
+    if (draft.redditClientId && draft.redditClientSecret && draft.redditUsername && draft.redditPassword) {
+      try {
+        await api.putCredentials('reddit', {
+          clientId: draft.redditClientId,
+          clientSecret: draft.redditClientSecret,
+          username: draft.redditUsername,
+          password: draft.redditPassword,
+        });
+      } catch (err) {
+        failures.push(`Reddit: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    if (draft.geminiApiKey) {
+      try {
+        await api.putCredentials('gemini', { apiKey: draft.geminiApiKey });
+      } catch (err) {
+        failures.push(`Gemini: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    setSaving(false);
+
+    if (failures.length > 0) {
+      setError(`Vault sync failed for: ${failures.join('; ')}`);
+      return; // do not claim success
+    }
+
+    // Persist ONLY the booleans — never the secrets.
+    onSave({
+      isApiModeActive: draft.isApiModeActive ?? false,
+      configuredProviders: {
+        x: settings.configuredProviders.x || Boolean(draft.xApiKey),
+        reddit: settings.configuredProviders.reddit || Boolean(draft.redditClientId),
+        linkedin: settings.configuredProviders.linkedin,
+        gemini: settings.configuredProviders.gemini || Boolean(draft.geminiApiKey),
+      },
+    });
+
     setSavedSuccess(true);
     setTimeout(() => {
       setSavedSuccess(false);
       onClose();
     }, 1200);
   };
+
+  const configured = settings.configuredProviders;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
@@ -78,17 +128,25 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
               <Lock className="w-4 h-4" />
             </span>
             <span className="text-xs font-mono uppercase tracking-widest text-brand-accent font-semibold">
-              Client-Side Local Vault
+              Encrypted Server Vault
             </span>
           </div>
           <h3 className="text-2xl font-sans font-black text-white uppercase tracking-tight">
             API Credentials &amp; Dispatch Modes
           </h3>
           <p className="text-xs text-zinc-400">
-            Keys are saved to this browser's local vault and, when the backend is running, mirrored
-            into its encrypted server-side vault so the scheduler can dispatch on your behalf.
+            Keys are pushed to the backend's AES-256-GCM vault and never written to this browser.
+            Only a "configured" flag is stored locally. Secrets you type are dropped from memory
+            the moment they are stored.
           </p>
         </div>
+
+        {error && (
+          <div className="p-3 rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 text-[11px] font-mono flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
 
         {/* Dispatch Mode Toggle */}
         <div className="p-4 rounded-xl border border-brand-border bg-brand-bg space-y-3">
@@ -101,20 +159,23 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
             </div>
             <button
               type="button"
-              onClick={() => setFormData({ ...formData, isApiModeActive: !formData.isApiModeActive })}
+              role="switch"
+              aria-checked={Boolean(draft.isApiModeActive)}
+              aria-label="Automated API dispatch mode"
+              onClick={() => setDraft({ ...draft, isApiModeActive: !draft.isApiModeActive })}
               className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
-                formData.isApiModeActive ? 'bg-brand-accent' : 'bg-zinc-800'
+                draft.isApiModeActive ? 'bg-brand-accent' : 'bg-zinc-800'
               }`}
             >
-              <span 
+              <span
                 className={`w-4 h-4 rounded-full bg-zinc-950 absolute top-1 transition-transform ${
-                  formData.isApiModeActive ? 'left-7' : 'left-1'
-                }`} 
+                  draft.isApiModeActive ? 'left-7' : 'left-1'
+                }`}
               />
             </button>
           </div>
 
-          {!formData.isApiModeActive && (
+          {!draft.isApiModeActive && (
             <div className="p-2.5 rounded-lg bg-brand-surface border border-white/5 text-[11px] font-mono text-zinc-400 flex items-start gap-2">
               <Info className="w-4 h-4 text-brand-accent shrink-0 mt-0.5" />
               <span>
@@ -128,51 +189,69 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
         <div className="flex border-b border-white/10 gap-4 text-xs font-mono">
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'x'}
             onClick={() => setActiveTab('x')}
-            className={`pb-2 transition-colors cursor-pointer ${
+            className={`pb-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'x' ? 'text-brand-accent border-b-2 border-brand-accent font-bold' : 'text-zinc-500 hover:text-white'
             }`}
           >
             X / Twitter API v2
+            {configured.x && <CheckCircle2 className="w-3 h-3 text-emerald-400" />}
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'reddit'}
             onClick={() => setActiveTab('reddit')}
-            className={`pb-2 transition-colors cursor-pointer ${
+            className={`pb-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'reddit' ? 'text-brand-indigo border-b-2 border-brand-indigo font-bold' : 'text-zinc-500 hover:text-white'
             }`}
           >
             Reddit PRAW API
+            {configured.reddit && <CheckCircle2 className="w-3 h-3 text-emerald-400" />}
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'linkedin'}
             onClick={() => setActiveTab('linkedin')}
-            className={`pb-2 transition-colors cursor-pointer ${
+            className={`pb-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'linkedin' ? 'text-sky-400 border-b-2 border-sky-400 font-bold' : 'text-zinc-500 hover:text-white'
             }`}
           >
             LinkedIn
+            {configured.linkedin && <CheckCircle2 className="w-3 h-3 text-emerald-400" />}
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'ai'}
             onClick={() => setActiveTab('ai')}
-            className={`pb-2 transition-colors cursor-pointer ${
+            className={`pb-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'ai' ? 'text-emerald-400 border-b-2 border-emerald-400 font-bold' : 'text-zinc-500 hover:text-white'
             }`}
           >
             AI Engine (Gemini)
+            {configured.gemini && <CheckCircle2 className="w-3 h-3 text-emerald-400" />}
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 font-mono text-xs">
           {activeTab === 'x' && (
             <div className="space-y-3">
+              {configured.x && (
+                <div className="p-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-[11px] flex items-center gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> X credentials stored in the server vault.
+                  Type new values below to rotate them.
+                </div>
+              )}
               <div>
                 <label className="block text-zinc-400 mb-1">X API Key (Consumer Key)</label>
                 <input 
                   type="password"
-                  value={formData.xApiKey || ''}
-                  onChange={e => setFormData({ ...formData, xApiKey: e.target.value })}
+                  value={draft.xApiKey || ''}
+                  onChange={e => setDraft({ ...draft, xApiKey: e.target.value })}
                   placeholder="e.g. xxxxxxxxxxxxxxxxxxxx"
                   className="w-full bg-brand-bg border border-brand-border rounded-xl p-2.5 text-zinc-200 placeholder:text-zinc-700 focus:outline-none focus:border-brand-accent"
                 />
@@ -182,8 +261,8 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
                 <label className="block text-zinc-400 mb-1">X API Key Secret</label>
                 <input 
                   type="password"
-                  value={formData.xApiSecret || ''}
-                  onChange={e => setFormData({ ...formData, xApiSecret: e.target.value })}
+                  value={draft.xApiSecret || ''}
+                  onChange={e => setDraft({ ...draft, xApiSecret: e.target.value })}
                   placeholder="e.g. xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
                   className="w-full bg-brand-bg border border-brand-border rounded-xl p-2.5 text-zinc-200 placeholder:text-zinc-700 focus:outline-none focus:border-brand-accent"
                 />
@@ -193,8 +272,8 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
                 <label className="block text-zinc-400 mb-1">Access Token (User Context)</label>
                 <input 
                   type="password"
-                  value={formData.xAccessToken || ''}
-                  onChange={e => setFormData({ ...formData, xAccessToken: e.target.value })}
+                  value={draft.xAccessToken || ''}
+                  onChange={e => setDraft({ ...draft, xAccessToken: e.target.value })}
                   placeholder="e.g. xxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
                   className="w-full bg-brand-bg border border-brand-border rounded-xl p-2.5 text-zinc-200 placeholder:text-zinc-700 focus:outline-none focus:border-brand-accent"
                 />
@@ -204,8 +283,8 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
                 <label className="block text-zinc-400 mb-1">Access Token Secret</label>
                 <input 
                   type="password"
-                  value={formData.xAccessSecret || ''}
-                  onChange={e => setFormData({ ...formData, xAccessSecret: e.target.value })}
+                  value={draft.xAccessSecret || ''}
+                  onChange={e => setDraft({ ...draft, xAccessSecret: e.target.value })}
                   placeholder="e.g. xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
                   className="w-full bg-brand-bg border border-brand-border rounded-xl p-2.5 text-zinc-200 placeholder:text-zinc-700 focus:outline-none focus:border-brand-accent"
                 />
@@ -215,12 +294,17 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
 
           {activeTab === 'reddit' && (
             <div className="space-y-3">
+              {configured.reddit && (
+                <div className="p-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-[11px] flex items-center gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Reddit credentials stored in the server vault.
+                </div>
+              )}
               <div>
                 <label className="block text-zinc-400 mb-1">Reddit Client ID</label>
                 <input 
                   type="text"
-                  value={formData.redditClientId || ''}
-                  onChange={e => setFormData({ ...formData, redditClientId: e.target.value })}
+                  value={draft.redditClientId || ''}
+                  onChange={e => setDraft({ ...draft, redditClientId: e.target.value })}
                   placeholder="e.g. your-app-id"
                   className="w-full bg-brand-bg border border-brand-border rounded-xl p-2.5 text-zinc-200 placeholder:text-zinc-700 focus:outline-none focus:border-brand-indigo"
                 />
@@ -230,8 +314,8 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
                 <label className="block text-zinc-400 mb-1">Reddit Client Secret</label>
                 <input 
                   type="password"
-                  value={formData.redditClientSecret || ''}
-                  onChange={e => setFormData({ ...formData, redditClientSecret: e.target.value })}
+                  value={draft.redditClientSecret || ''}
+                  onChange={e => setDraft({ ...draft, redditClientSecret: e.target.value })}
                   placeholder="e.g. your-secret"
                   className="w-full bg-brand-bg border border-brand-border rounded-xl p-2.5 text-zinc-200 placeholder:text-zinc-700 focus:outline-none focus:border-brand-indigo"
                 />
@@ -241,8 +325,8 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
                 <label className="block text-zinc-400 mb-1">Reddit Username</label>
                 <input 
                   type="text"
-                  value={formData.redditUsername || ''}
-                  onChange={e => setFormData({ ...formData, redditUsername: e.target.value })}
+                  value={draft.redditUsername || ''}
+                  onChange={e => setDraft({ ...draft, redditUsername: e.target.value })}
                   placeholder="u/username"
                   className="w-full bg-brand-bg border border-brand-border rounded-xl p-2.5 text-zinc-200 placeholder:text-zinc-700 focus:outline-none focus:border-brand-indigo"
                 />
@@ -280,12 +364,17 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
 
           {activeTab === 'ai' && (
             <div className="space-y-3">
+              {configured.gemini && (
+                <div className="p-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-[11px] flex items-center gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Gemini key stored in the server vault.
+                </div>
+              )}
               <div>
                 <label className="block text-zinc-400 mb-1">Google Gemini API Key (Optional)</label>
                 <input 
                   type="password"
-                  value={formData.geminiApiKey || ''}
-                  onChange={e => setFormData({ ...formData, geminiApiKey: e.target.value })}
+                  value={draft.geminiApiKey || ''}
+                  onChange={e => setDraft({ ...draft, geminiApiKey: e.target.value })}
                   placeholder="AIzaSy..."
                   className="w-full bg-brand-bg border border-brand-border rounded-xl p-2.5 text-zinc-200 placeholder:text-zinc-700 focus:outline-none focus:border-emerald-400"
                 />
@@ -307,17 +396,23 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
 
             <button
               type="submit"
-              className="px-6 py-2.5 rounded-xl bg-brand-accent text-zinc-950 font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow-[0_0_12px_rgba(163,230,53,0.3)]"
+              disabled={saving}
+              className="px-6 py-2.5 rounded-xl bg-brand-accent text-zinc-950 font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow-[0_0_12px_rgba(163,230,53,0.3)] disabled:opacity-50"
             >
               {savedSuccess ? (
                 <>
                   <CheckCircle2 className="w-4 h-4" />
                   <span>Vault Updated</span>
                 </>
+              ) : saving ? (
+                <>
+                  <span className="w-3.5 h-3.5 border-2 border-zinc-950 border-t-transparent rounded-full animate-spin" />
+                  <span>Storing…</span>
+                </>
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  <span>Save Vault Config</span>
+                  <span>Store in Server Vault</span>
                 </>
               )}
             </button>

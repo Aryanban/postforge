@@ -5,8 +5,15 @@ import { api, OFFLINE_STATUS, type BackendStatus } from '../lib/api/client';
  * Tracks backend availability, re-checking on mount and every 30s. The app
  * stays fully usable when the backend is offline (native-intent fallback).
  */
-export function useBackend(): BackendStatus {
-  const [status, setStatus] = useState<BackendStatus>(OFFLINE_STATUS);
+export interface BackendState extends BackendStatus {
+  /** True until the first health check resolves (or times out). */
+  checking: boolean;
+}
+
+export function useBackend(): BackendState {
+  // Starts indeterminate rather than OFFLINE so the status pill does not flash
+  // "offline" on first paint when the backend is actually up.
+  const [status, setStatus] = useState<BackendStatus | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -22,5 +29,5 @@ export function useBackend(): BackendStatus {
     };
   }, []);
 
-  return status;
+  return { ...OFFLINE_STATUS, ...status, checking: status === null };
 }

@@ -9,6 +9,10 @@ services:
       - ./server/.env
     environment:
       - PORT=3001
+      # The published port is already host-scoped by Docker, and the container
+      # must bind 0.0.0.0 for the port forward to work. Do NOT replicate this
+      # on a bare-metal/VPS deploy without an authenticating reverse proxy.
+      - HOST=0.0.0.0
       - FRONTEND_ORIGIN=http://localhost:4173
       - DATABASE_PATH=/app/server/data/postforge.db
     volumes:

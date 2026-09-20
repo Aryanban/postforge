@@ -14,7 +14,20 @@ export interface ProjectProfile {
 
 export type PlatformType = 'x' | 'reddit' | 'linkedin';
 export type SlotType = 'morning' | 'evening' | 'custom';
-export type PostStatus = 'draft' | 'approved' | 'scheduled' | 'published' | 'failed';
+
+/**
+ * Lifecycle of a post.
+ * - draft:     generated, not yet approved
+ * - pending:   handed to the user via a native-intent popup (1-Click / Reddit
+ *              submit). We cannot know if they finished posting, so it waits
+ *              for an explicit "Mark as posted" confirmation. The scheduler
+ *              deliberately never claims posts in this state.
+ * - approved:  cleared for the backend scheduler
+ * - scheduled: claimed by the scheduler and in flight
+ * - published: confirmed shipped (either by a provider or by the user)
+ * - failed:    exhausted retries
+ */
+export type PostStatus = 'draft' | 'pending' | 'approved' | 'scheduled' | 'published' | 'failed';
 
 /**
  * Structural role a row plays in the dispatch pipeline.

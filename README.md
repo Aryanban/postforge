@@ -92,6 +92,29 @@ docker compose up      # api on :3001, web on :4173
 
 ---
 
+## Deployment & security
+
+PostForge is a **single-user, localhost-first tool**. The API server has **no
+authentication layer**, so it binds to `127.0.0.1` by default and refuses to
+expose itself to your network:
+
+- `HOST` is loopback-only unless you override it.
+- `PUT /api/config/credentials` writes to the encrypted vault — anyone who can
+  reach the port can overwrite or use your provider keys.
+- The Docker Compose file sets `HOST=0.0.0.0` because a container *must* bind
+  the wildcard address for the published port forward to work; the port is still
+  only reachable from the Docker host. Do not replicate that override on a
+  bare-metal or VPS deploy without putting an authenticating reverse proxy
+  (Caddy, nginx + auth, Cloudflare Access, Tailscale Funnel…) in front of it.
+
+**Secrets never live in the browser.** Provider keys entered in the web studio
+are pushed to the server's AES-256-GCM vault and dropped from memory
+immediately; localStorage retains only a "configured" boolean per provider, not
+the credentials themselves. LinkedIn tokens are obtained server-side over OAuth
+2.0, so the client secret never reaches the browser either.
+
+---
+
 ## The Heavy Ranker Mathematics
 
 PostForge scores posts using the real ranking multipliers from `twitter/the-algorithm`:

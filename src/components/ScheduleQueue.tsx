@@ -52,18 +52,36 @@ export const ScheduleQueue: React.FC<ScheduleQueueProps> = ({
     }
   };
 
-  const handleCopy = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+  const handleCopy = async (text: string, id: string) => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // Fallback for insecure contexts (http) where the Clipboard API is absent.
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      /* clipboard unavailable — non-fatal */
+    }
   };
 
   // Launch native X Intent (100% free / no API key needed!)
+  // Marks the post 'pending' (handed off to the user), NOT published — we
+  // cannot know whether the user actually completed the post in the popup.
   const launchNativeXIntent = (post: PostItem) => {
     const textToTweet = encodeURIComponent(post.mainContent);
     const intentUrl = `https://twitter.com/intent/tweet?text=${textToTweet}`;
     window.open(intentUrl, '_blank');
-    onUpdateStatus(post.id, 'published');
+    onUpdateStatus(post.id, 'pending');
   };
 
   // Launch Reddit submit
@@ -73,7 +91,7 @@ export const ScheduleQueue: React.FC<ScheduleQueueProps> = ({
     const body = encodeURIComponent(post.mainContent);
     const url = `https://www.reddit.com/r/${sub}/submit?title=${title}&text=${body}`;
     window.open(url, '_blank');
-    onUpdateStatus(post.id, 'published');
+    onUpdateStatus(post.id, 'pending');
   };
 
   if (posts.length === 0) {
@@ -239,9 +257,30 @@ export const ScheduleQueue: React.FC<ScheduleQueueProps> = ({
                       {dispatchResults[post.id].remoteId}
                     </span>
                   )}
-                  {post.status === 'published' && !dispatchResults[post.id] && (
+
+                  {post.status === 'pending' ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono text-amber-400 flex items-center gap-1">
+                        <Clock className="w-3 h-3" /> awaiting your post
+                      </span>
+                      <button
+                        onClick={() => onUpdateStatus(post.id, 'published')}
+                        className="px-2 py-1 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-bold hover:bg-emerald-500/20 transition-colors cursor-pointer flex items-center gap-1"
+                      >
+                        <Check className="w-3 h-3" /> Mark as posted
+                      </button>
+                    </div>
+                  ) : post.status === 'published' && !dispatchResults[post.id] ? (
                     <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
                       <Check className="w-3 h-3" /> published
+                    </span>
+                  ) : post.status === 'failed' ? (
+                    <span className="text-[10px] font-mono text-red-400 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" /> failed
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-mono text-zinc-500 uppercase">
+                      {post.status}
                     </span>
                   )}
                 </div>

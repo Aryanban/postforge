@@ -33,7 +33,7 @@ const PostSchema = z
     subreddit: z.string().optional(),
     scheduledDate: z.string(),
     jitterMinutes: z.number().optional(),
-    status: z.enum(['draft', 'approved', 'scheduled', 'published', 'failed']).optional(),
+    status: z.enum(['draft', 'pending', 'approved', 'scheduled', 'published', 'failed']).optional(),
     whyAlgorithmLikes: z.string().optional(),
     threadParts: z.array(z.string()).optional(),
     postKind: z.enum(['root', 'reply']).optional(),

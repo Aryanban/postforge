@@ -62,6 +62,13 @@ function parseLinkedInCreds(): LinkedInCreds | null {
 
 export const config = {
   port: Number(env('PORT') || '3001'),
+  /**
+   * Binds to the loopback interface by default. PostForge is a single-user
+   * tool with no authentication layer, so listening on 0.0.0.0 would expose
+   * the vault-credential endpoints to your whole network. Override HOST only
+   * behind a reverse proxy that adds auth (see the README deployment notes).
+   */
+  host: env('HOST') || '127.0.0.1',
   frontendOrigin: env('FRONTEND_ORIGIN') || 'http://localhost:5173',
   dbPath,
   /** When true the full pipeline runs but dispatch is simulated (no paid API calls). */

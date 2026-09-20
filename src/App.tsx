@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ProjectProfile, PostItem, ApiVaultConfig } from '@postforge/core';
+import { ProjectProfile, PostItem } from '@postforge/core';
 import { 
   loadStoredProjects, 
   saveProjects, 
@@ -9,7 +9,8 @@ import {
   savePosts, 
   loadApiConfig, 
   saveApiConfig, 
-  DEFAULT_PROJECT 
+  DEFAULT_PROJECT,
+  type PersistedApiConfig,
 } from './lib/storage/localVault';
 import { generateCustomAngle } from '@postforge/core';
 import { Navbar } from './components/Navbar';
@@ -31,7 +32,7 @@ export function App() {
   const [projects, setProjects] = useState<ProjectProfile[]>(() => loadStoredProjects());
   const [activeProjectId, setActiveProjectId] = useState<string>(() => loadActiveProjectId());
   const [queuePosts, setQueuePosts] = useState<PostItem[]>(() => loadStoredPosts());
-  const [apiConfig, setApiConfig] = useState<ApiVaultConfig>(() => loadApiConfig());
+  const [apiConfig, setApiConfig] = useState<PersistedApiConfig>(() => loadApiConfig());
 
   const backend = useBackend();
   const [linkedinBanner, setLinkedinBanner] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
@@ -111,7 +112,10 @@ export function App() {
     setActiveTab('queue');
   };
 
-  const hasApiKeys = Boolean(apiConfig.xApiKey || apiConfig.redditClientId || apiConfig.geminiApiKey);
+  const hasApiKeys =
+    apiConfig.configuredProviders.x ||
+    apiConfig.configuredProviders.reddit ||
+    apiConfig.configuredProviders.gemini;
 
   return (
     <div className="min-h-screen flex flex-col bg-brand-bg text-zinc-100 font-sans">
@@ -192,11 +196,13 @@ export function App() {
 
           {/* Quick status pill */}
           <div className="text-[11px] font-mono text-zinc-500 hidden sm:flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${backend.available ? 'bg-emerald-400' : 'bg-zinc-600'}`}></span>
+            <span className={`w-2 h-2 rounded-full ${backend.available ? 'bg-emerald-400' : backend.checking ? 'bg-amber-400 animate-pulse' : 'bg-zinc-600'}`}></span>
             <span>
-              {backend.available
-                ? `Backend ${backend.dryRun ? '(dry-run)' : '(live)'}` 
-                : 'Heavy Ranker Inversion Active'}
+              {backend.checking
+                ? 'Checking backend…'
+                : backend.available
+                  ? `Backend ${backend.dryRun ? '(dry-run)' : '(live)'}`
+                  : 'Heavy Ranker Inversion Active'}
             </span>
           </div>
         </div>
@@ -306,7 +312,7 @@ export function App() {
       {/* API Keys Modal */}
       {isApiModalOpen && (
         <ApiKeysModal 
-          config={apiConfig}
+          settings={apiConfig}
           onSave={(updated) => setApiConfig(updated)}
           onClose={() => setIsApiModalOpen(false)}
           backend={backend}

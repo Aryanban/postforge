@@ -62,7 +62,7 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
               {post.hook}
             </h3>
 
-            <div className="text-zinc-300 font-body leading-relaxed whitespace-pre-wrap text-xs bg-black/20 p-3 rounded-xl border border-white/5">
+            <div className="text-zinc-300 font-sans leading-relaxed whitespace-pre-wrap text-xs bg-black/20 p-3 rounded-xl border border-white/5">
               {post.mainContent}
             </div>
 

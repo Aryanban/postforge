@@ -109,7 +109,7 @@ export const AlgorithmScorecard: React.FC<AlgorithmScorecardProps> = ({
 
       {/* Why Algorithm Likes This */}
       {whyAlgorithmLikes && (
-        <div className="bg-brand-bg/70 border border-white/5 rounded-xl p-3.5 text-xs space-y-1 font-body">
+        <div className="bg-brand-bg/70 border border-white/5 rounded-xl p-3.5 text-xs space-y-1 font-sans">
           <span className="text-[10px] uppercase font-mono font-bold text-brand-accent tracking-wider block">
             Algorithmic Recommendation Logic:
           </span>
