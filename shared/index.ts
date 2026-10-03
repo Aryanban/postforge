@@ -9,3 +9,5 @@ export * from './ingestion/githubIngestor';
 export * from './ingestion/projectCrawler';
 export * from './generators/promptTemplates';
 export * from './generators/aiPrompts';
+export * from './generators/threadSplitter';
+export * from './generators/carouselGenerator';

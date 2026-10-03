@@ -53,6 +53,18 @@ export const AI_FRAMEWORKS: AIFramework[] = [
     platforms: ['x', 'linkedin'],
     brief: 'Authentic build-in-public milestone with concrete numbers and a lesson, asking for honest feedback.',
   },
+  {
+    id: 'linkedin-carousel',
+    name: 'LinkedIn Carousel Slide Deck',
+    platforms: ['linkedin'],
+    brief: 'Structured slide-by-slide document carousel content (Cover Hook, 3-5 core lesson slides, and CTA slide).',
+  },
+  {
+    id: 'curated-tools',
+    name: 'Curated 7-Tool Listicle',
+    platforms: ['x', 'linkedin'],
+    brief: 'High-save curated stack listicle ("7 tools that replace a $100k agency") engineered for bookmark velocity.',
+  },
 ];
 
 export function frameworkById(id: string): AIFramework | undefined {

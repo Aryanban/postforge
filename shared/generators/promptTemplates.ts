@@ -150,6 +150,40 @@ Stack: ${project.techStack.join(', ')}.
 Code and live demo are completely free and open. Would love honest feedback on the architecture!`;
     reply = `Live site: ${projectDomain}\nFeedback on code structure is deeply appreciated!`;
     why = 'Complies with Reddit 9:1 self-promotion guidelines by focusing 90% on engineering problems and community value.';
+  } else if (framework === 'linkedin-carousel') {
+    frameworkName = 'LinkedIn Carousel Slide Deck';
+    content = `Most engineering teams burn $2,000/month on bloated SaaS subscriptions.
+
+Here is the exact architecture blueprint we used to build ${project.name} locally with zero cloud subscription fees:
+
+Slide 1: Problem & Hidden Cloud Costs
+Slide 2: Decoupled State & Local SQLite Persistence
+Slide 3: Real-Time Algorithm Alignment
+Slide 4: Zero-Dependency Build Pipelines
+Slide 5: Key Takeaways & Free Blueprint
+
+(Swipe through the 5 slides below ➡️)
+
+What is the biggest hidden cost in your tech stack?`;
+    reply = `Explore the full open-source repo & system documentation:\n${projectDomain}\n\nRepost 🔄 to help another builder in your network!`;
+    why = 'LinkedIn document carousels achieve 3.8x higher impressions than single-image posts. High swipe-through rates signal top-tier content quality.';
+  } else if (framework === 'curated-tools') {
+    frameworkName = 'Curated Architecture Stack';
+    content = `7 free, open-source tools that do the work of a $100k agency:
+
+1. ${project.name} — ${project.valueProps[0] || 'Local-first automation'}
+2. SQLite — zero-config embedded persistence
+3. Tailwind CSS — zero-runtime styling engine
+4. Playwright — headless browser verification
+5. Vitest — sub-second test execution
+6. Hono — ultra-fast lightweight API runtime
+7. TypeScript — strict compile-time safety
+
+Save this list for your next side project 🔖
+
+Which one is in your daily stack?`;
+    reply = `Inspect the open-source blueprint of ${project.name} here:\n${projectDomain}`;
+    why = 'Curated resource lists trigger high bookmark save-rates. On modern algorithms, 1 bookmark is weighted equal to 5 likes.';
   } else {
     content = `Building ${project.name} taught me one core lesson:
 
@@ -161,7 +195,7 @@ Stack:
 The complete setup is running live. What stack are you betting on right now?`;
   }
 
-  const platform: PlatformType = framework === 'reddit-story' ? 'reddit' : 'x';
+  const platform: PlatformType = framework === 'reddit-story' ? 'reddit' : framework === 'linkedin-carousel' ? 'linkedin' : 'x';
   const ctx = scoreContext(project, platform);
   const score = calculateHeavyRankerScore(content, reply, ctx);
   const lints = lintPostContent(content, reply, ctx);

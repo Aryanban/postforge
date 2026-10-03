@@ -58,6 +58,7 @@ export interface PostItem {
   // --- Dispatch pipeline (server-managed) ---
   postKind?: PostKind;
   threadParts?: string[];        // Real multi-part thread bodies (X), each <= 280 chars
+  carouselSlides?: any[];        // LinkedIn document carousel slide deck (Taplio rival)
   parentRemoteId?: string;       // For replies: the platform id of the parent post
   remoteId?: string;             // Platform post id once dispatched
   dispatchedAt?: string;         // ISO timestamp of successful dispatch
