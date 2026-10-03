@@ -10,7 +10,6 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronUp,
-  Cpu,
   Calculator
 } from 'lucide-react';
 

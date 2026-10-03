@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ProjectProfile } from '@postforge/core';
 import { api, type BackendStatus } from '../lib/api/client';
 import { ingestOffline } from '../lib/ingestion/offlineIngest';
-import { Globe, Sparkles, ArrowRight, CheckCircle2, Layers, Cpu, AlertCircle } from 'lucide-react';
+import { Globe, Sparkles, ArrowRight, CheckCircle2, Cpu, AlertCircle } from 'lucide-react';
 
 interface ProjectIngestorProps {
   onProjectIngested: (project: ProjectProfile) => void;
@@ -62,7 +62,12 @@ export const ProjectIngestor: React.FC<ProjectIngestorProps> = ({
   };
 
   return (
-    <div className={`border border-brand-border bg-brand-surface rounded-2xl p-6 md:p-8 space-y-6 ${isModal ? 'max-w-2xl w-full' : ''}`}>
+    <div
+      className={`border border-brand-border bg-brand-surface rounded-2xl p-6 md:p-8 space-y-6 ${isModal ? 'max-w-2xl w-full' : ''}`}
+      role={isModal ? 'dialog' : undefined}
+      aria-modal={isModal ? 'true' : undefined}
+      aria-label={isModal ? 'Ingest domain or repository' : undefined}
+    >
       <div className="space-y-2">
         <div className="inline-flex items-center gap-2 bg-brand-accent/10 border border-brand-accent/20 px-3 py-1 rounded-full text-xs font-mono uppercase tracking-wider text-brand-accent">
           <Sparkles className="w-3.5 h-3.5" />

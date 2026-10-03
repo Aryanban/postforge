@@ -9,15 +9,11 @@ import { ShadowbanInspector } from './ShadowbanInspector';
 import { SocialPreviewCard } from './SocialPreviewCard';
 import { 
   Sparkles, 
-  Send, 
   Calendar, 
   RotateCw, 
-  Wand2, 
   Check, 
-  Layers, 
   Clock, 
   MessageSquare,
-  Plus,
   Eye,
   Edit3
 } from 'lucide-react';

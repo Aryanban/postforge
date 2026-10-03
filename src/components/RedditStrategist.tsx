@@ -1,6 +1,6 @@
 import React from 'react';
 import { ProjectProfile } from '@postforge/core';
-import { MessageSquare, ShieldAlert, Sparkles, CheckCircle2, Info, ArrowUpRight } from 'lucide-react';
+import { MessageSquare, ShieldAlert, Sparkles, CheckCircle2, ArrowUpRight } from 'lucide-react';
 
 interface RedditStrategistProps {
   project: ProjectProfile;

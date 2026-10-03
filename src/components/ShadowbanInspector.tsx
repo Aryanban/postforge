@@ -5,7 +5,6 @@ import {
   ShieldAlert, 
   AlertTriangle, 
   CheckCircle2, 
-  Sparkles, 
   Wand2 
 } from 'lucide-react';
 

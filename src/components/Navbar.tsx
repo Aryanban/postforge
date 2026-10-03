@@ -5,9 +5,7 @@ import {
   Key, 
   Plus, 
   ShieldCheck, 
-  Sparkles, 
-  Globe, 
-  ExternalLink 
+  Globe 
 } from 'lucide-react';
 
 interface NavbarProps {

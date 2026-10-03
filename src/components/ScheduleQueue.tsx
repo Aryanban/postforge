@@ -9,7 +9,6 @@ import {
   Copy, 
   Check, 
   Trash2, 
-  Sparkles, 
   AlertCircle,
   Zap,
   ScrollText,

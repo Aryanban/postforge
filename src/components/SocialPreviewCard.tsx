@@ -25,7 +25,6 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
 }) => {
   // Scale engagement metrics realistically based on Heavy Ranker net score
   const score = post.algorithmScore.netScore;
-  const estimatedViews = Math.round((score / 100) * 14500 + 1200);
   const estimatedLikes = Math.round((score / 100) * 420 + 35);
   const estimatedRetweets = Math.round((score / 100) * 88 + 8);
   const estimatedReplies = Math.round((score / 100) * 54 + 5);

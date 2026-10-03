@@ -3,7 +3,6 @@ import { ApiVaultConfig } from '@postforge/core';
 import { api, LINKEDIN_CONNECT_URL, type BackendStatus } from '../lib/api/client';
 import type { PersistedApiConfig } from '../lib/storage/localVault';
 import {
-  Key,
   X,
   Save,
   Info,
@@ -109,9 +108,27 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
 
   const configured = settings.configuredProviders;
 
+  // Esc dismisses the modal; focus starts on the panel for keyboard users.
+  const panelRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    panelRef.current?.focus();
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-      <div className="bg-brand-surface border border-brand-border rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl p-6 md:p-8 space-y-6 relative">
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="API credentials and dispatch modes"
+        tabIndex={-1}
+        className="bg-brand-surface border border-brand-border rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl p-6 md:p-8 space-y-6 relative focus:outline-none"
+      >
         {/* Close */}
         <button
           onClick={onClose}
