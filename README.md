@@ -3,247 +3,175 @@
 <p align="center">
   <img src="https://img.shields.io/badge/License-MIT-lime.svg?style=for-the-badge" alt="License MIT" />
   <img src="https://img.shields.io/badge/Algorithm-X%20Heavy%20Ranker-black?style=for-the-badge&logo=x" alt="X Algorithm" />
+  <img src="https://img.shields.io/badge/Tests-61%20Passing-brightgreen?style=for-the-badge&logo=vitest&logoColor=white" alt="Tests 61 Passing" />
   <img src="https://img.shields.io/badge/Stack-React%2019%20%7C%20Fastify%20%7C%20MCP-indigo?style=for-the-badge" alt="Stack" />
   <img src="https://img.shields.io/badge/PRs-Welcome-brightgreen.svg?style=for-the-badge" alt="PRs Welcome" />
 </p>
 
-> **The open-source, algorithm-aware growth engine for X, Reddit, and LinkedIn.**
-> A full-stack monorepo: a React 19 studio, a Fastify dispatch + scheduling backend,
-> a Model Context Protocol server, and a shared TypeScript core that scores every
-> draft against the real parameters of `twitter/the-algorithm` before it ships.
+> **The open-source, algorithm-aware growth engine rivaling TweetHunter, Typefully, and Taplio for X, LinkedIn, and Reddit.**
+> A full-stack powerhouse: a React 19 studio, a Fastify dispatch + scheduling backend, a Model Context Protocol (MCP) server, and a shared TypeScript core that scores every draft against the real mathematics of `twitter/the-algorithm` before it ships.
 
 ---
 
-## What PostForge Actually Does
+## ⚡ What Makes PostForge Different
 
-Most scheduling tools are **dumb queues** — they publish whatever you write, whenever
-you tell them. PostForge is a **creator-side pre-flight system**:
+Most scheduling tools (Buffer, Hootsuite, Later) are **dumb queues** — they blindly publish whatever you write. Expensive creator tools (TweetHunter, Typefully, Taplio) charge up to $100/mo for simple schedulers.
 
-1. **Ingest** a domain or GitHub repo (real DOM crawling with cheerio + the GitHub API).
-2. **Generate** posts with Gemini — each one scored in a loop by the real Heavy Ranker
-   math until it clears the threshold, or falls back to zero-dependency templates.
-3. **Lint** every draft against a 7-point anti-shadowban shield.
-4. **Schedule** with humanized jitter, and **dispatch for real** to X, Reddit, and
-   LinkedIn — including the delayed first reply that quarantines your link out of the
-   root post to dodge the -50% distribution penalty.
+**PostForge is a complete, 100% local creator cockpit and algorithm pre-flight engine:**
 
-### Honest about keys
-
-PostForge ships in **dry-run mode by default**. The entire pipeline — generation,
-scoring, linting, scheduling, dispatch — runs end-to-end with **simulated** API calls,
-so you can evaluate everything without spending a cent. Flip `DRY_RUN=false` and add
-credentials to post for real:
-
-| Platform | What real dispatch needs |
-| :--- | :--- |
-| **X / Twitter** | API v2 OAuth 1.0a user-context keys (Basic tier, $100/mo — the free tier cannot create tweets). Without them, the zero-cost **1-Click Native Intent** launcher in the web UI still works. |
-| **Reddit** | A script app (client id/secret + username/password). Free and easy to create. |
-| **LinkedIn** | A LinkedIn app with the `w_member_social` scope. OAuth 2.0 is handled server-side, so your client secret never touches the browser. |
-| **Gemini (AI)** | Optional. Without it, PostForge uses its built-in algorithmic template engine. |
+1. **Ingest** any website or GitHub repo (real DOM crawling with cheerio + GitHub API) to learn your product's voice and terminology.
+2. **Typefully-Grade Thread Sequencer** — Splits long thoughts into engaging, chained multi-tweet threads with auto-numbering, hook preservation, and link quarantine.
+3. **Taplio-Grade LinkedIn Carousel Studio** — Generates high-converting multi-slide 1080x1350 portrait carousel decks with 5 visual themes and instant SVG export.
+4. **Generate & Score** with Gemini or built-in templates — scored in a recursive loop by the real X Heavy Ranker formulas until passing high-confidence thresholds.
+5. **Lint** every draft against an automated 7-point anti-shadowban shield.
+6. **Schedule** with humanized anti-bot jitter, and **dispatch for real** to X, Reddit, and LinkedIn — with automated first-reply link quarantine dodging the -50% root penalty.
 
 ---
 
-## Architecture
+## 🚀 Competitive Advantages vs. Paid Rivals
 
-```
-postforge/
-├── shared/            @postforge/core — the brain (framework-agnostic TypeScript)
-│   ├── algorithm/       heavyRanker · shadowbanLinter · optimalTimes · simClusterAligner
-│   ├── ingestion/       githubIngestor · domCrawler (cheerio) · projectCrawler
-│   └── generators/      promptTemplates · aiPrompts
-├── server/            @postforge/api — Fastify + SQLite + scheduler
-│   ├── providers/       x (API v2) · reddit (OAuth) · linkedin (OAuth 2.0 + ugcPosts)
-│   ├── ai/              gemini client + the generate → score → iterate loop
-│   ├── scheduler/       30s dispatch tick, retries with backoff, delayed replies
-│   └── vault.ts         AES-256-GCM credential encryption at rest
-├── mcp/               @postforge/mcp — Model Context Protocol server (stdio)
-└── src/               the React 19 + Tailwind v4 web studio
-```
-
-The algorithm core is written once in `shared/` and imported by the web app, the API
-server, and the MCP server — one source of truth, no logic duplication.
+| Feature | PostForge | TweetHunter ($99/mo) | Typefully ($29/mo) | Taplio ($49/mo) |
+| :--- | :---: | :---: | :---: | :---: |
+| **Heavy Ranker Algorithm Scoring** | ✅ Native, real math | ❌ | ❌ | ❌ |
+| **Typefully-Grade Thread Splitter** | ✅ Built-in (`shared/generators`) | ❌ | ✅ | ❌ |
+| **Taplio-Grade LinkedIn Carousel Studio** | ✅ Built-in (1080x1350 SVG) | ❌ | ❌ | ✅ |
+| **7-Point Anti-Shadowban Linter** | ✅ Automated | ❌ | ❌ | ❌ |
+| **Delayed First-Reply Link Quarantine** | ✅ Automated (+15m) | ⚠️ Manual | ⚠️ Manual | ❌ |
+| **Automated GitHub & Web Ingestion** | ✅ Cheerio & Octokit | ❌ | ❌ | ❌ |
+| **Iterative AI Scoring Loop** | ✅ Gemini loop to 80+ score | ❌ | ⚠️ | ⚠️ |
+| **LinkedIn Server-Side OAuth 2.0** | ✅ Encrypted vault | ❌ | ❌ | ✅ |
+| **Closed-Loop Performance Tracking** | ✅ Actual vs. predicted | ⚠️ | ⚠️ | ⚠️ |
+| **Model Context Protocol (MCP) Server** | ✅ 11 AI agent tools | ❌ | ❌ | ❌ |
+| **Zero-Cost Local Mode** | ✅ 100% Local & Free | ❌ | ❌ | ❌ |
+| **Price / Month** | **$0 (MIT License)** | **$99/mo** | **$29/mo** | **$49/mo** |
 
 ---
 
-## Quickstart
+## ✨ Features Breakdown
+
+### 🧵 Typefully-Grade Multi-Tweet Thread Splitter (`shared/generators/threadSplitter.ts`)
+- **Intelligent Thought Splitting** — Breaks articles or long essays into coherent, high-velocity tweets respecting sentence boundaries.
+- **Hook Optimization** — Inspects and enforces high-engagement curiosity/benefit hooks on Tweet 1.
+- **Auto-Numbering & Chaining** — Adds clean `1/N` or `(1/N)` numbering and formats replies so they publish as a contiguous thread.
+- **Quarantined CTA Tweet** — Moves project links to the final thread card to maximize top-of-funnel reach.
+
+### 🎨 Taplio-Grade LinkedIn Carousel Deck Generator (`shared/generators/carouselGenerator.ts`)
+- **Multi-Slide Carousel Builder** — Transforms complex topics, tutorials, or changelogs into swipeable 5–10 slide visual decks.
+- **Mobile-First Portrait Aspect Ratio** — Built in 1080x1350 (4:5 portrait ratio) for maximum screen presence on the LinkedIn mobile feed.
+- **5 Professional Color Themes** — Modern Dark, Minimalist Light, Indigo Tech, Crimson Punch, and Forest Green.
+- **Vector SVG Engine** — Formats typography, slide numbers, brand badges, and handles client-side SVG exports ready for PDF conversion.
+
+### 📐 The Heavy Ranker Mathematics
+PostForge scores posts using the real ranking multipliers decoded from `twitter/the-algorithm`:
+
+$$\text{Score} = 13.5 \times P(\text{Reply}) + 75.0 \times P(\text{Author Reply}) + 11.0 \times P(\text{Dwell} > 15\text{s}) + 1.0 \times P(\text{Retweet}) + 0.5 \times P(\text{Like}) - \text{Penalties}$$
+
+- **150x Author-Reply Boost** — Author responses carry 150x the weight of a like; generator ensures posts invite genuine discourse.
+- **Root Link Quarantine** — Outbound URLs in root tweets incur severe distribution penalties. PostForge automatically isolates the link into a delayed first reply posted 15 minutes later.
+- **Dwell Time Optimization** — Formats copy with readable beats, bullet breaks, and spacing to increase screen dwell time.
+
+### 🛡️ 7-Point Anti-Shadowban Shield
+- **Link Quarantine** — Detects and strips external links in root posts.
+- **Hashtag Quarantine** — Limits hashtags to 0–1; flags 2+ as engagement spam.
+- **Wall-of-Text Detector** — Prevents reader fatigue by enforcing line break pacing.
+- **Anti-Bot Interval Jitter** — Adds randomized ±4–18 minute offsets to scheduled times.
+- **Spam Word Filter** — Catches shadowban trigger phrases like "DM me", "check bio", etc.
+- **Character Safety** — Exact character tracking with thread splitting.
+- **SimCluster Alignment** — Ensures draft vocabulary aligns with your project's domain keywords.
+
+---
+
+## 🚀 Quickstart
 
 ```bash
 git clone https://github.com/Aryanban/postforge.git
 cd postforge
 npm install          # installs all workspaces
 
-# Terminal 1 — the backend (dispatch + scheduler + AI)
+# Terminal 1 — Backend (Fastify + SQLite + Scheduler)
 cp server/.env.example server/.env
 npm -w @postforge/api run dev      # http://localhost:3001
 
-# Terminal 2 — the web studio
+# Terminal 2 — React 19 Web Studio
 npm run dev                        # http://localhost:5173
 ```
 
-The web app detects the backend automatically and unlocks backend auto-dispatch,
-AI generation, and OAuth-based LinkedIn connection. Without the backend running,
-it stays fully usable in zero-cost native-intent mode.
-
-Docker alternative:
+Docker Compose alternative:
 
 ```bash
-docker compose up      # api on :3001, web on :4173
+docker compose up                  # api on :3001, web on :4173
 ```
 
 ---
 
-## Deployment & security
+## 🔐 Credentials & Security
 
-PostForge is a **single-user, localhost-first tool**. The API server has **no
-authentication layer**, so it binds to `127.0.0.1` by default and refuses to
-expose itself to your network:
+PostForge operates in **dry-run mode by default**. You can test the complete pipeline — crawling, generating, scoring, linting, scheduling, thread splitting, and carousel generation — completely free without connecting credentials.
 
-- `HOST` is loopback-only unless you override it.
-- `PUT /api/config/credentials` writes to the encrypted vault — anyone who can
-  reach the port can overwrite or use your provider keys.
-- The Docker Compose file sets `HOST=0.0.0.0` because a container *must* bind
-  the wildcard address for the published port forward to work; the port is still
-  only reachable from the Docker host. Do not replicate that override on a
-  bare-metal or VPS deploy without putting an authenticating reverse proxy
-  (Caddy, nginx + auth, Cloudflare Access, Tailscale Funnel…) in front of it.
-
-**Secrets never live in the browser.** Provider keys entered in the web studio
-are pushed to the server's AES-256-GCM vault and dropped from memory
-immediately; localStorage retains only a "configured" boolean per provider, not
-the credentials themselves. LinkedIn tokens are obtained server-side over OAuth
-2.0, so the client secret never reaches the browser either.
+When ready to post live:
+- **X / Twitter**: API v2 OAuth 1.0a credentials (or use the zero-cost **1-Click Native Intent** button in the web UI).
+- **Reddit**: Script App client ID & secret.
+- **LinkedIn**: LinkedIn App with `w_member_social` scope via server-side OAuth 2.0.
+- **Encrypted Vault**: Credentials entered in the UI are encrypted at rest using **AES-256-GCM** in SQLite and never stored in plain text or exposed to client-side localStorage.
 
 ---
 
-## The Heavy Ranker Mathematics
+## 🔌 Model Context Protocol (MCP) Server
 
-PostForge scores posts using the real ranking multipliers from `twitter/the-algorithm`:
+PostForge includes an 11-tool MCP server for AI coding assistants (Claude Desktop, Cursor, Antigravity, Zed):
 
-$$\text{Score} = 13.5 \times P(\text{Reply}) + 75.0 \times P(\text{Author Reply}) + 11.0 \times P(\text{Dwell} > 15s) + 1.0 \times P(\text{Retweet}) + 0.5 \times P(\text{Like}) - \text{Penalties}$$
-
-- **The 150x Author-Reply Boost** — author responses carry 150x the weight of a like, so every generated post ends on a genuine question.
-- **The Root Link Penalty (-50% to -70%)** — outbound URLs in the root tweet throttle distribution. PostForge quarantines the link into a **delayed first reply**, posted automatically 15 minutes after the root post.
-- **Dwell Optimization** — bullets, line breaks, and short beats double screen pause time.
-- **SimCluster Alignment** — computed, not hardcoded: the scorer measures how much of your project's ingested vocabulary each post actually covers.
-- **Platform-Aware** — link penalties are calibrated per network (X throttles hard; Reddit self-posts and LinkedIn tolerate in-body links).
-
-## The 7-Point Anti-Shadowban Shield
-
-Every draft is linted before it can ship:
-
-1. **Link Quarantine** — no external URLs in the root post.
-2. **Hashtag Quarantine** — 0–1 hashtags; 2+ triggers spam de-ranking.
-3. **Wall-of-Text Detector** — enforces dwell-friendly structure.
-4. **Anti-Bot Interval Jitter** — randomized ±4–18 minute offsets on every schedule.
-5. **Spam Word Filter** — flags "DM me", "check bio", and other high-risk phrases.
-6. **Character Safety** — 280-char awareness and thread splitting.
-7. **SimCluster Consistency** — warns when the copy drifts from your community's vocabulary.
-
-`Auto-Fix` applies all of the above in one click: it rips URLs out of the root post,
-formats the reply, and strips hashtag spam.
-
-## AI Generation, Grounded by the Algorithm
-
-The AI is never trusted blindly. Gemini drafts are scored by the **real** Heavy Ranker
-and linter, and the model is re-prompted with specific feedback until the draft clears
-80/100 with zero critical issues (max 3 rounds). The best-scoring draft always wins —
-and you can watch every round's score in the UI.
-
-Six frameworks: `morning-velocity`, `evening-debate`, `post-mortem`, `thread-hook`
-(a real 5-part thread, each part ≤ 280 chars, posted as a reply chain),
-`reddit-story` (9:1 compliant), and `launch-showcase`.
-
----
-
-## REST API
-
-| Method | Path | Purpose |
-| :--- | :--- | :--- |
-| `GET` | `/api/health` | Backend status, dry-run flag, configured providers |
-| `POST` | `/api/projects/ingest` | Crawl a domain or GitHub repo into a profile |
-| `GET` | `/api/projects` | List ingested projects |
-| `POST` | `/api/posts/generate` | Template generation (no API key needed) |
-| `POST` | `/api/posts/generate-ai` | Gemini generation with the scoring loop |
-| `POST` `GET` `PUT` `DELETE` | `/api/posts` | Full post CRUD (PUT re-scores on edit) |
-| `POST` | `/api/posts/:id/approve` | Approve for the scheduler |
-| `POST` | `/api/posts/:id/dispatch` | Dispatch immediately |
-| `GET` | `/api/dispatch/log` | Recent dispatch history |
-| `PUT` | `/api/posts/:id/performance` | Log a published post's real engagement (feedback loop) |
-| `GET` | `/api/posts/:id/performance` | Recorded engagement for one post |
-| `GET` | `/api/performance` | Every recorded result joined to its predicted score |
-| `GET` `PUT` | `/api/config/*` | Provider status + encrypted credential vault |
-| `GET` | `/api/auth/linkedin` · `/callback` | LinkedIn OAuth 2.0 |
-
-## MCP Server
-
-Connect PostForge to Claude Desktop, Cursor, Zed, or any agentic IDE over stdio:
-
-```jsonc
-// Claude Desktop: ~/Library/Application Support/Claude/claude_desktop_config.json
+```json
 {
   "mcpServers": {
     "postforge": {
       "command": "node",
-      "args": ["/path/to/postforge/mcp/dist/index.js"],
+      "args": ["/absolute/path/to/postforge/mcp/dist/index.js"],
       "env": { "POSTFORGE_API_URL": "http://localhost:3001/api" }
     }
   }
 }
 ```
 
-Tools: `postforge_health`, `postforge_ingest`, `postforge_projects`,
-`postforge_generate`, `postforge_generate_ai`, `postforge_score`, `postforge_lint`,
-`postforge_schedule`, `postforge_queue`, `postforge_dispatch`,
-`postforge_ai_frameworks`. Scoring and linting run locally against the shared core;
-stateful operations proxy through the API.
+### Available MCP Tools:
+- `postforge_health` — Check backend and provider connection status.
+- `postforge_ingest` — Ingest web domain or GitHub repository into a profile.
+- `postforge_projects` — List ingested projects and learned vocabulary.
+- `postforge_generate` — Generate template-based posts without API keys.
+- `postforge_generate_ai` — Run Gemini generator with iterative Heavy Ranker scoring loop.
+- `postforge_score` — Calculate Heavy Ranker score and engagement probabilities.
+- `postforge_lint` — Run 7-point anti-shadowban audit on any post draft.
+- `postforge_schedule` — Add post with anti-bot jitter to the dispatch queue.
+- `postforge_queue` — Inspect scheduled queue and delay timers.
+- `postforge_dispatch` — Manually dispatch post immediately.
+- `postforge_ai_frameworks` — List available proven viral post frameworks.
 
 ---
 
-## Feature Comparison
+## 🧪 Testing & Quality Assurance
 
-| Feature | PostForge | TweetHunter ($99/mo) | Typefully ($29/mo) | Postiz |
-| :--- | :---: | :---: | :---: | :---: |
-| Heavy Ranker algorithm scoring | ✅ Native, real math | ❌ | ❌ | ❌ |
-| 7-point anti-shadowban linter | ✅ Built-in | ❌ | ❌ | ❌ |
-| Delayed link-quarantine replies | ✅ Automated | ⚠️ Manual | ⚠️ Manual | ❌ |
-| Live GitHub repo ingestion | ✅ Direct API | ❌ | ❌ | ❌ |
-| Real DOM crawling of any domain | ✅ cheerio | ❌ | ❌ | ❌ |
-| AI drafts scored in an iterate loop | ✅ | ❌ | ⚠️ | ⚠️ |
-| LinkedIn dispatch (server-side OAuth) | ✅ | ❌ | ❌ | ❌ |
-| MCP server for agentic IDEs | ✅ | ❌ | ❌ | ❌ |
-| Zero-cost mode (no paid API) | ✅ 1-Click Intent | ❌ | ❌ | ⚠️ |
-| Reddit 9:1 guardrail | ✅ | ❌ | ❌ | ❌ |
-| License | MIT | Closed | Closed | AGPL-3.0 |
-
----
-
-## Development
+PostForge includes **61 Vitest unit and integration tests** verifying the algorithm engine, thread splitter, carousel generator, shadowban linter, optimal posting times, and SQLite queue persistence:
 
 ```bash
-npm test                              # 45 vitest tests across the core + AI loop + DB
-npm run lint                          # typecheck web
-npm -w @postforge/api run lint        # typecheck api
-npm -w @postforge/mcp run lint        # typecheck mcp
-npm run build                         # build web
-npm -w @postforge/api run build       # build api
-npm -w @postforge/mcp run build       # build mcp (bundled CLI)
+# Run all 61 automated tests
+npm test
+
+# Typecheck web studio and packages
+npm run lint
+npm -w @postforge/api run lint
+npm -w @postforge/mcp run lint
+
+# Production build
+npm run build
 ```
 
-All three workspaces are verified by the CI workflow on every push and pull request.
+---
+
+## 📄 License
+
+Distributed under the [MIT License](LICENSE).
 
 ---
 
-## Contributing
-
-1. Fork the repo.
-2. Create your feature branch (`git checkout -b feature/cool-algorithm-rule`).
-3. Add tests under `shared/**/*.test.ts` or `server/src/**/*.test.ts`.
-4. Open a Pull Request — CI runs typechecks, the full test suite, and all three builds.
-
-If PostForge helped your project get traction, please **star the repo ⭐**!
-
----
-
-## License
-
-Open source under the **MIT License**. Created by [Aryan Bansal](https://github.com/Aryanban).
+<p align="center">
+  <sub>Engineered with precision by <b>Aryan Bansal</b> • <a href="https://github.com/Aryanban">github.com/Aryanban</a></sub>
+</p>
